@@ -1,0 +1,539 @@
+<template>
+  <div class="logs_views">
+    <div class="search_box">
+      <div class="search_list" style="width: 200px">
+        <el-select v-model="searchForm.project" size="small" placeholder="请选择项目" clearable @change="getModalList(searchForm.project)">
+          <el-option
+            v-for="(item,index) in objectList"
+            :key="index"
+            :label="item"
+            :value="item">
+          </el-option>
+        </el-select>
+      </div>
+      <div class="search_list" style="width: 150px">
+        <el-select v-model="searchForm.module" size="small" placeholder="请选择模块" clearable @change="getFieldList(searchForm.module)">
+          <el-option
+            v-for="(item,index) in modalList"
+            :key="index"
+            :label="item.text"
+            :value="item.id">
+          </el-option>
+        </el-select>
+      </div>
+      <div class="search_list" style="width: 140px">
+        <el-select v-model="searchForm.level" size="small" placeholder="请选择日志级别" clearable>
+          <el-option
+            v-for="item in logsLevelList"
+            :key="item"
+            :label="item"
+            :value="item">
+          </el-option>
+        </el-select>
+      </div>
+      <div class="search_list" style="width: 115px">
+        <el-input size="small" v-model="searchForm.user" placeholder="请输入工号" clearable></el-input>
+      </div>
+      <div class="search_list" style="width: 190px;">
+        <el-date-picker
+          size="small"
+          clearable
+          v-model="startTime"
+          type="datetime"
+          value-format="timestamp"
+          placeholder="选择开始时间">
+        </el-date-picker>
+      </div>
+      <div class="search_list" style="width: 190px;">
+        <el-date-picker
+          size="small"
+          clearable
+          type="datetime"
+          value-format="timestamp"
+          v-model="endTime"
+          placeholder="选择结束时间">
+        </el-date-picker>
+      </div>
+      <div class="search_list" style="width: 130px">
+        <el-input size="small" v-model="searchForm.msg" placeholder="请输入关键字" clearable></el-input>
+      </div>
+      <div class="search_list" style="width: 240px">
+        <el-input size="small" v-model="searchForm.field1" :placeholder="fieldListPlace" clearable></el-input>
+      </div>
+      <div class="search_list">
+        <el-button size="small" type="primary" @click="searchBtn(1,15)">查询</el-button>
+      </div>
+    </div>
+
+    <el-card :class="['logs_card',{'cardPadding':showReport}]" shadow="hover">
+      <div slot="header" class="card_header">
+        <span>日志报告</span>
+        <el-button style="float: right; padding: 3px 0" type="text" @click="showReport = !showReport">{{showReport? '收起': '展开'}}</el-button>
+      </div>
+      <transition name="el-fade-in-linear">
+        <div class="logs_message_list" v-if="showReport">
+          <el-card class="logs_message_box" shadow="hover">
+            <i class="el-icon-star-off"></i>
+            <div class="logs_message_text">
+              <p>日志总数</p>
+              <span>{{messageList.totalNums}}</span>
+            </div>
+          </el-card>
+          <el-card class="logs_message_box" shadow="hover">
+            <i class="el-icon-data-line"></i>
+            <div class="logs_message_text">
+              <p>查询结果</p>
+              <span>{{messageNum}}</span>
+            </div>
+          </el-card>
+          <el-card class="logs_message_box" shadow="hover">
+            <i class="el-icon-magic-stick"></i>
+            <div class="logs_message_text">
+              <p>成功率</p>
+              <span>{{messageList.successRate}}</span>
+            </div>
+          </el-card>
+          <el-card class="logs_message_box" shadow="hover">
+            <i class="el-icon-stopwatch"></i>
+            <div class="logs_message_text">
+              <p>查询耗时</p>
+              <span>{{messageList.elapsedTime ? messageList.elapsedTime + 'ms': ''}}</span>
+            </div>
+          </el-card>
+        </div>
+      </transition>
+    </el-card>
+
+    <el-card :class="['logs_card',{'cardPadding':showTable}]" shadow="hover">
+      <div slot="header" class="card_header">
+        <span>日志详情</span>
+        <el-button style="float: right; padding: 3px 0" type="text" @click="showTable = !showTable">{{showTable? '收起': '展开'}}</el-button>
+      </div>
+      <transition name="el-fade-in-linear">
+        <el-table
+          v-el-table-infinite-scroll="load"
+          height="calc(100vh - 385px)"
+          v-show="showTable"
+          :data="logDataList"
+          border
+          stripe
+          class="log_table"
+          style="width: 100%">
+          <el-table-column
+            width="150"
+            show-overflow-tooltip
+            label="项目名称">
+            <template slot-scope="scope">
+              {{scope.row.project}}
+            </template>
+          </el-table-column>
+          <el-table-column
+            width="160"
+            show-overflow-tooltip
+            label="模块">
+            <template slot-scope="scope">
+              {{scope.row.module}}
+            </template>
+          </el-table-column>
+          <el-table-column
+            align="center"
+            show-overflow-tooltip
+            width="80"
+            label="日志等级">
+            <template slot-scope="scope">
+              <el-tag
+                size="small"
+                :type="scope.row.level === 'info' ? 'info' :
+                   scope.row.level === 'error' ? 'danger':
+                   scope.row.level === 'warn' ? 'warning':
+                   scope.row.level === 'fatal' ? 'success': ''"
+                disable-transitions>{{scope.row.level}}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            align="center"
+            show-overflow-tooltip
+            prop="user"
+            width="80"
+            label="工号">
+          </el-table-column>
+          <el-table-column
+            width="150"
+            show-overflow-tooltip
+            label="时间">
+            <template slot-scope="scope">
+              {{$getTime(scope.row.time)}}
+            </template>
+          </el-table-column>
+          <el-table-column
+            min-width="300"
+            label="日志详情">
+            <template slot-scope="scope">
+              <div class="hide_message" @click="openMessageDetails(scope.row.message)">
+                <p class="message">{{scope.row.message}}</p>
+                <el-button size="mini" type="primary" icon="el-icon-search" circle></el-button>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            width="280"
+            show-overflow-tooltip
+            label="扩展字段">
+            <template slot-scope="scope">
+              {{scope.row.field1}}
+            </template>
+          </el-table-column>
+        </el-table>
+      </transition>
+    </el-card>
+
+    <el-dialog
+      title="日志详情"
+      :visible.sync="showMessageDetails"
+      width="600px">
+      <json-view v-if="messageType === 'json'" style="max-height: 500px;overflow-y: auto" :json="messageType === 'json'?messageDetails:'{}'"></json-view>
+      <p v-else v-html="messageDetails" style="max-height: 500px;overflow-y: auto"></p>
+    </el-dialog>
+
+  </div>
+</template>
+
+<script>
+  import elTableInfiniteScroll from 'el-table-infinite-scroll';
+  export default {
+    name: "logsViews",
+    components:{
+      'JsonView': () => import('@/components/JsonView'),
+      elTableInfiniteScroll
+    },
+    directives: {
+      'el-table-infinite-scroll': elTableInfiniteScroll
+    },
+    data(){
+      return {
+        objectList: [],  // 项目列表
+        modalList: [], // 模块列表
+        fieldListPlace: '请输入关键字',
+        logsLevelList: ['Info','Error','Warn','Fatal'], // 日志级别
+        startTime: new Date(new Date()-1000*60*60*24),
+        endTime: '',
+        searchForm: {  // 搜索列表
+          project: '',
+          module: '',
+          level: '',
+          user: '',
+          msg: '',
+          field1: '',
+        },
+        logDataList: [], // 日志表格数据
+
+        showReport: false, // 展开收起日志报告
+
+        showTable: true, // 展开收起日志详情
+
+        showMessageDetails: false, // 日志详情弹窗
+        messageDetails: '', // 日志详情
+
+        treeView:{
+          maxDepth: 2,
+          rootObjectKey: "日志详情JSON",
+          modifiable: false,
+          link: false,
+          limitRenderDepth: false
+        },
+
+        messageType: '', // 日志详情类型
+
+        dataPage: 1,
+        dataNum: 15,
+        scrollStatus: false,
+        messageList: {}, // 日志报告信息
+
+        messageNum: '',
+      }
+    },
+    methods: {
+      load() {
+        if(this.scrollStatus){
+          this.dataPage = this.dataPage +1
+          this.searchForm['startTime'] = this.$getTime(new Date(this.startTime).getTime()).replace(/\s+/g, "T")
+          this.searchForm['whichPage'] = this.dataPage
+          this.searchForm['pageNums'] = this.dataNum
+          // this.$message.success('拉取第'+this.dataPage+'页的数据');
+
+          this.$axios.get('http://192.168.0.212:8081/log/query',{params: this.searchForm})
+            .then(res =>{
+              if(res.data.code === 0){
+                let dataList = res.data.message
+                if(dataList instanceof Array){
+                  dataList.map(item =>{
+                    item.project = item.project || this.searchForm.project
+                    item.module = item.module || this.searchForm.module.split('_')[1]
+                  })
+                  this.messageNum += res.data.recordNums
+                  this.messageList = res.data
+                  this.logDataList = this.logDataList.concat(dataList)
+                }
+              }else {
+                this.scrollStatus = false
+                this.$message.warning(res.data.message)
+              }
+            })
+            .catch(e =>{
+              this.logDataList = []
+              this.$message.error('请求错误')
+            })
+        }
+      },
+      /**
+       * @Description: 获取项目列表
+       * @author Wish
+       * @date 2020/3/20
+      */
+      getProjectList(){
+        this.$axios.get('http://192.168.0.212:8081/log/queryList')
+          .then(res =>{
+            if(res.data.code === 0){
+              this.objectList = res.data.message
+            }else {
+              this.$message.warning(res.data.message)
+            }
+          })
+      },
+      /**
+       * @Description: 获取模块列表
+       * @author Wish
+       * @date 2020/3/20
+      */
+      getModalList(val){
+        this.modalList = [];
+        this.searchForm.module = '';
+        this.fieldListPlace = '请输入关键字';
+        this.$axios.get('http://192.168.0.212:8081/log/queryList/'+val)
+          .then(res =>{
+            if(res.data.code === 0){
+              let modalList = res.data.message;
+              for (let i = 0; i < modalList.length; i++) {
+                let option = {
+                  "id": modalList[i].split('_')[0] + '_' + modalList[i].split('_')[1],
+                  "text": modalList[i].split('_')[1],
+                };
+                this.modalList.push(option)
+              }
+              console.log(this.modalList);
+              const obj = {};
+              this.modalList = this.modalList.reduce(function(item, next) {
+                obj[next.text] ? '' : obj[next.text] = true && item.push(next);
+                return item;
+              }, []);
+              console.log(this.modalList);
+            }else {
+              this.$message.warning(res.data.message)
+            }
+          })
+      },
+      /**
+       * @Description: 获取关键字列表
+       * @author Wish
+       * @date 2020/3/23
+      */
+      getFieldList(val){
+        this.$axios.get('http://192.168.0.212:8081/log/queryList/'+this.searchForm.module +'/'+val)
+          .then(res =>{
+            if(res.data.code === 0){
+              this.fieldListPlace = res.data.fieldName
+              // this.fieldList = [...new Set(fieldList.split('|'))]
+              // if(this.fieldList.length <= 1 && this.fieldList[0] === ''){
+              //   this.fieldListPlace = '暂无关键字列表'
+              // }
+            }else {
+              this.$message.warning(res.data.message)
+            }
+          })
+      },
+
+      /**
+       * @Description: 搜索按钮
+       * @author Wish
+       * @date 2020/3/23
+      */
+      searchBtn(){
+        this.dataPage = 1
+        this.scrollStatus = true
+        this.messageList=  {}
+        console.log((new Date(this.startTime).getTime()));
+        this.searchForm['startTime'] = this.$getTime(new Date(this.startTime).getTime()).replace(/\s+/g, "T")
+        this.searchForm['whichPage'] = this.dataPage
+        this.searchForm['pageNums'] = this.dataNum
+        this.$axios.get('http://192.168.0.212:8081/log/query',{params: this.searchForm})
+          .then(res =>{
+            if(res.data.code === 0){
+              let dataList = res.data.message
+              this.messageNum = res.data.recordNums
+              this.messageList = res.data
+              console.log(dataList instanceof Array);
+              if(dataList instanceof Array){
+                dataList.map(item =>{
+                  item.project = item.project || this.searchForm.project
+                  item.module = item.module || this.searchForm.module.split('_')[1]
+                })
+                this.logDataList = dataList
+              }else {
+                this.logDataList = []
+                this.$message.warning('暂无数据')
+              }
+            }else {
+              this.logDataList = []
+              this.$message.warning(res.data.message)
+            }
+          })
+        .catch(e =>{
+          this.logDataList = []
+          this.$message.error('请求错误')
+        })
+      },
+
+      /**
+       * @Description: 日志详情弹窗框
+       * @author Wish
+       * @date 2020/3/23
+      */
+      openMessageDetails(val){
+        this.messageDetails = ''
+        this.showMessageDetails = true
+        console.log(JSON.parse(JSON.stringify(val)));
+        try {
+          if(typeof JSON.parse(val) == 'object'){
+            this.messageDetails = JSON.parse(val)
+            this.messageType = 'json'
+          }
+        }catch (e) {
+          this.messageDetails = val
+          this.messageType = 'text'
+        }
+
+
+      },
+    },
+    created() {
+      this.getProjectList()
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .logs_views{
+    height: 100%;
+    .search_box{
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      .search_list{
+        margin-right: 10px;
+        margin-bottom: 10px;
+        .el-date-editor{
+          width: 100%;
+        }
+      }
+    }
+    .logs_message_list{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      .logs_message_box{
+        flex: 1;
+        &:not(:last-child){
+          margin-right: 20px;
+        }
+        /deep/.el-card__body{
+          height: 80px;
+          min-width: 100px;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+          padding: 10px !important;
+
+        }
+        &:first-child{
+          i>{
+            background: #dc3545;
+          }
+        }
+        &:nth-child(2){
+          i>{
+            background: #17a2b8;
+          }
+        }
+        &:nth-child(3){
+          i>{
+            background: #28a745;
+          }
+        }
+        &:last-child{
+          i>{
+            background: #ffc107;
+          }
+        }
+        i>{
+          width: 80px;
+          height: 100%;
+          font-size: 30px;
+          font-weight: bold;
+          border-radius: 5px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          margin-right: 10px;
+          flex-shrink: 0;
+        }
+        .logs_message_text{
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          padding-top: 8px;
+          width: 100%;
+          p{
+            /*margin-bottom: 10px;*/
+          }
+          span{
+
+          }
+        }
+      }
+    }
+    .logs_card{
+      &:not(:last-child){
+        margin-bottom: 10px;
+      }
+      &.cardPadding{
+        /deep/.el-card__body{
+          padding: 20px;
+        }
+      }
+      .log_table{
+        .hide_message{
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          .message{
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            margin-right: 20px;
+          }
+        }
+      }
+    }
+  }
+  /deep/.el-card__header{
+    padding: 10px 20px;
+  }
+  /deep/.el-card__body{
+    padding: unset;
+  }
+  /deep/.el-dialog__body{
+    padding-top: unset;
+  }
+</style>
