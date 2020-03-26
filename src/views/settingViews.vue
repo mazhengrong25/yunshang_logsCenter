@@ -77,7 +77,7 @@
       :close-on-press-escape="false"
       :show-close="false"
       :visible.sync="settingDialog"
-      width="30%">
+      width="500px">
       <el-form label-width="100px">
         <el-form-item label="项目名称">
           <el-input v-model="settingForm.project" clearable placeholder="不能包含“_”, 长度建议不能超过50byte"></el-input>
@@ -186,26 +186,29 @@
       saveSettingData(){
         let data
         if(this.settingType === 'add'){
+          this.settingForm.max_alarm_num = Number(this.settingForm.max_alarm_num)
+          this.settingForm.number = Number(this.settingForm.number)
           data = this.settingForm
         }else {
           data = {
-            project: this.settingForm.project.value,
+            project: this.settingForm.project,
             number: Number(this.settingForm.max_alarm_num),
-            author: this.settingForm.author.value
+            author: this.settingForm.author
           }
         }
-        this.$axios.post('http://192.168.0.212:8081/settings/set',data)
+        let url = this.settingType === 'add'? 'http://192.168.0.36:8081/settings/set': 'http://192.168.0.36:8081/settings/alarm'
+        this.$axios.post(url,data)
           .then(res =>{
-            if(res.code === 0){
-              this.$message.success(res.message)
+            if(res.data.code === 0){
+              this.$message.success(res.data.message)
               this.settingDialog = false
               this.getSettingData()
             }else {
-              this.$message.warning(res.message)
+              this.$message.warning(res.data.message)
             }
           })
           .catch(e =>{
-            this.$message.success('请求错误')
+            this.$message.error('请求错误')
           })
       },
 
