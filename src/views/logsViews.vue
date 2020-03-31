@@ -118,6 +118,7 @@
           border
           stripe
           class="log_table"
+          highlight-current-row
           style="width: 100%">
           <el-table-column
             width="150"
@@ -180,7 +181,14 @@
             show-overflow-tooltip
             label="扩展字段">
             <template slot-scope="scope">
-              {{scope.row.field1}}
+              <div @click="openFieldDialog(scope.row)">
+                {{(scope.row.field1? scope.row.field1 + "|": ' |') +
+                (scope.row.field2? scope.row.field2 + "|": ' |') +
+                (scope.row.field3? scope.row.field3 + "|": ' |') +
+                (scope.row.field4? scope.row.field4 + "|": ' |') +
+                (scope.row.field5? scope.row.field5: '')
+                }}
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -191,8 +199,42 @@
       title="日志详情"
       :visible.sync="showMessageDetails"
       width="600px">
+      <el-button type="text"
+                 class="copyJson"
+                 v-clipboard:error="onError"
+                 v-clipboard:copy="messageType === 'json'?JSON.stringify(messageDetails):messageType"
+                 v-clipboard:success="onCopy">复制</el-button>
       <json-view v-if="messageType === 'json'" style="max-height: 500px;overflow-y: auto" :json="messageType === 'json'?messageDetails:'{}'"></json-view>
-      <p v-else v-html="messageDetails" style="max-height: 500px;overflow-y: auto"></p>
+      <p v-else style="max-height: 500px;overflow-y: auto">{{messageDetails}}</p>
+    </el-dialog>
+
+    <el-dialog
+      title="扩展字段详情"
+      :visible.sync="showFieldDetails"
+      width="400px">
+      <div class="field_box">
+        <div class="field_list">
+          <p>订单号</p>
+          <span>{{fieldDetails.field1}}</span>
+        </div>
+        <div class="field_list">
+          <p>是否自愿</p>
+          <span>{{fieldDetails.field2}}</span>
+        </div>
+        <div class="field_list">
+          <p>退票单号</p>
+          <span>{{fieldDetails.field3}}</span>
+        </div>
+        <div class="field_list">
+          <p>渠道名称</p>
+          <span>{{fieldDetails.field4}}</span>
+        </div>
+        <div class="field_list">
+          <p>队列名称</p>
+          <span>{{fieldDetails.field5}}</span>
+        </div>
+
+      </div>
     </el-dialog>
 
   </div>
@@ -202,20 +244,20 @@
   import elTableInfiniteScroll from 'el-table-infinite-scroll';
   export default {
     name: "logsViews",
-    components:{
+    components: {
       'JsonView': () => import('@/components/JsonView'),
       elTableInfiniteScroll
     },
     directives: {
       'el-table-infinite-scroll': elTableInfiniteScroll
     },
-    data(){
+    data() {
       return {
         objectList: [],  // 项目列表
         modalList: [], // 模块列表
         fieldListPlace: '请输入关键字',
-        logsLevelList: ['Info','Error','Warn','Fatal'], // 日志级别
-        startTime: new Date(new Date()-1000*60*60*24),
+        logsLevelList: ['Info', 'Error', 'Warn', 'Fatal'], // 日志级别
+        startTime: new Date(new Date() - 1000 * 60 * 60 * 24),
         endTime: '',
         searchForm: {  // 搜索列表
           project: '',
@@ -234,7 +276,7 @@
         showMessageDetails: false, // 日志详情弹窗
         messageDetails: '', // 日志详情
 
-        treeView:{
+        treeView: {
           maxDepth: 2,
           rootObjectKey: "日志详情JSON",
           modifiable: false,
@@ -250,23 +292,26 @@
         messageList: {}, // 日志报告信息
 
         messageNum: '',
+
+        showFieldDetails: false, // 扩展字段详情弹窗
+        fieldDetails: {}, // 扩展字段详情
       }
     },
     methods: {
       load() {
-        if(this.scrollStatus){
-          this.dataPage = this.dataPage +1
+        if (this.scrollStatus) {
+          this.dataPage = this.dataPage + 1
           this.searchForm['startTime'] = this.$getTime(new Date(this.startTime).getTime()).replace(/\s+/g, "T")
           this.searchForm['whichPage'] = this.dataPage
           this.searchForm['pageNums'] = this.dataNum
           // this.$message.success('拉取第'+this.dataPage+'页的数据');
 
-          this.$axios.get('http://192.168.0.212:8081/log/query',{params: this.searchForm})
-            .then(res =>{
-              if(res.data.code === 0){
+          this.$axios.get('http://192.168.0.212:8081/log/query', {params: this.searchForm})
+            .then(res => {
+              if (res.data.code === 0) {
                 let dataList = res.data.message
-                if(dataList instanceof Array){
-                  dataList.map(item =>{
+                if (dataList instanceof Array) {
+                  dataList.map(item => {
                     item.project = item.project || this.searchForm.project
                     item.module = item.module || this.searchForm.module.split('_')[1]
                   })
@@ -274,12 +319,12 @@
                   this.messageList = res.data
                   this.logDataList = this.logDataList.concat(dataList)
                 }
-              }else {
+              } else {
                 this.scrollStatus = false
                 this.$message.warning(res.data.message)
               }
             })
-            .catch(e =>{
+            .catch(e => {
               this.logDataList = []
               this.$message.error('请求错误')
             })
@@ -289,13 +334,13 @@
        * @Description: 获取项目列表
        * @author Wish
        * @date 2020/3/20
-      */
-      getProjectList(){
+       */
+      getProjectList() {
         this.$axios.get('http://192.168.0.212:8081/log/queryList')
-          .then(res =>{
-            if(res.data.code === 0){
+          .then(res => {
+            if (res.data.code === 0) {
               this.objectList = res.data.message
-            }else {
+            } else {
               this.$message.warning(res.data.message)
             }
           })
@@ -304,14 +349,14 @@
        * @Description: 获取模块列表
        * @author Wish
        * @date 2020/3/20
-      */
-      getModalList(val){
+       */
+      getModalList(val) {
         this.modalList = [];
         this.searchForm.module = '';
         this.fieldListPlace = '请输入关键字';
-        this.$axios.get('http://192.168.0.212:8081/log/queryList/'+val)
-          .then(res =>{
-            if(res.data.code === 0){
+        this.$axios.get('http://192.168.0.212:8081/log/queryList/' + val)
+          .then(res => {
+            if (res.data.code === 0) {
               let modalList = res.data.message;
               for (let i = 0; i < modalList.length; i++) {
                 let option = {
@@ -322,12 +367,12 @@
               }
               console.log(this.modalList);
               const obj = {};
-              this.modalList = this.modalList.reduce(function(item, next) {
+              this.modalList = this.modalList.reduce(function (item, next) {
                 obj[next.text] ? '' : obj[next.text] = true && item.push(next);
                 return item;
               }, []);
               console.log(this.modalList);
-            }else {
+            } else {
               this.$message.warning(res.data.message)
             }
           })
@@ -336,84 +381,117 @@
        * @Description: 获取关键字列表
        * @author Wish
        * @date 2020/3/23
-      */
-      getFieldList(val){
-        this.$axios.get('http://192.168.0.212:8081/log/queryList/'+this.searchForm.module +'/'+val)
-          .then(res =>{
-            if(res.data.code === 0){
+       */
+      getFieldList(val) {
+        this.$axios.get('http://192.168.0.212:8081/log/queryList/' + this.searchForm.module + '/' + val)
+          .then(res => {
+            if (res.data.code === 0) {
               this.fieldListPlace = res.data.fieldName
               // this.fieldList = [...new Set(fieldList.split('|'))]
               // if(this.fieldList.length <= 1 && this.fieldList[0] === ''){
               //   this.fieldListPlace = '暂无关键字列表'
               // }
-            }else {
+            } else {
               this.$message.warning(res.data.message)
             }
           })
+      },
+
+      handleCurrentChange(val){
+        console.log(val);
+      },
+
+
+      /**
+       * @Description: 打开扩展字段弹窗
+       * @author Wish
+       * @date 2020/3/23
+       */
+      openFieldDialog(val) {
+        this.fieldDetails = val
+        console.log(this.fieldDetails);
+        this.showFieldDetails = true
       },
 
       /**
        * @Description: 搜索按钮
        * @author Wish
        * @date 2020/3/23
-      */
-      searchBtn(){
+       */
+      searchBtn() {
         this.dataPage = 1
         this.scrollStatus = true
-        this.messageList=  {}
+        this.messageList = {}
         console.log((new Date(this.startTime).getTime()));
         this.searchForm['startTime'] = this.$getTime(new Date(this.startTime).getTime()).replace(/\s+/g, "T")
         this.searchForm['whichPage'] = this.dataPage
         this.searchForm['pageNums'] = this.dataNum
-        this.$axios.get('http://192.168.0.212:8081/log/query',{params: this.searchForm})
-          .then(res =>{
-            if(res.data.code === 0){
+        this.$axios.get('http://192.168.0.212:8081/log/query', {params: this.searchForm})
+          .then(res => {
+            if (res.data.code === 0) {
               let dataList = res.data.message
               this.messageNum = res.data.recordNums
               this.messageList = res.data
               console.log(dataList instanceof Array);
-              if(dataList instanceof Array){
-                dataList.map(item =>{
+              if (dataList instanceof Array) {
+                dataList.map(item => {
                   item.project = item.project || this.searchForm.project
                   item.module = item.module || this.searchForm.module.split('_')[1]
                 })
                 this.logDataList = dataList
-              }else {
+              } else {
                 this.logDataList = []
                 this.$message.warning('暂无数据')
               }
-            }else {
+            } else {
               this.logDataList = []
               this.$message.warning(res.data.message)
             }
           })
-        .catch(e =>{
-          this.logDataList = []
-          this.$message.error('请求错误')
-        })
+          .catch(e =>{
+            this.logDataList = []
+            this.$message.error('请求错误')
+          })
       },
 
       /**
        * @Description: 日志详情弹窗框
        * @author Wish
        * @date 2020/3/23
-      */
-      openMessageDetails(val){
+       */
+      openMessageDetails(val) {
         this.messageDetails = ''
         this.showMessageDetails = true
-        console.log(JSON.parse(JSON.stringify(val)));
         try {
-          if(typeof JSON.parse(val) == 'object'){
-            this.messageDetails = JSON.parse(val)
-            this.messageType = 'json'
+          if(val.indexOf('xml') !== -1) {
+            this.messageDetails = val
+            this.messageType = 'text'
+          }else {
+            if(typeof JSON.parse(val) == 'object') {
+              this.messageDetails = JSON.parse(val)
+              this.messageType = 'json'
+            }
           }
-        }catch (e) {
+        } catch (e) {
           this.messageDetails = val
           this.messageType = 'text'
         }
-
-
       },
+
+
+      onCopy(e) {
+        this.$message({
+          message: '复制成功！',
+          type: 'success'
+        })
+      },
+      // 复制失败
+      onError(e) {
+        this.$message({
+          message: '复制失败！',
+          type: 'error'
+        })
+      }
     },
     created() {
       this.getProjectList()
@@ -513,6 +591,11 @@
         }
       }
       .log_table{
+        /deep/.current-row{
+          td{
+            background: rgba(230,160,0,.2);
+          }
+        }
         .hide_message{
           display: flex;
           align-items: center;
@@ -535,5 +618,27 @@
   }
   /deep/.el-dialog__body{
     padding-top: unset;
+  }
+  /deep/.json-view{
+    white-space: pre-wrap !important;
+  }
+  .field_box{
+    padding-top: 25px;
+    padding-left: 15px;
+    .field_list{
+      display: flex;
+      align-items: center;
+      >p{
+        width: 100px;
+      }
+      &:not(:last-child){
+        margin-bottom: 15px;
+      }
+    }
+  }
+  .copyJson{
+    position: absolute;
+    top: 20px;
+    left: 125px;
   }
 </style>

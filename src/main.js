@@ -53,6 +53,10 @@ Vue.prototype.$ELEMENT = { size: 'small' };
 import axios from "axios";
 Vue.prototype.$axios = axios;
 
+import VueClipboard  from 'vue-clipboard2'
+
+Vue.use( VueClipboard )
+
 
 // axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
