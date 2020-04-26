@@ -65,6 +65,7 @@
       </div>
     </div>
 
+    <!--
     <el-card :class="['logs_card',{'cardPadding':showReport}]" shadow="hover">
       <div slot="header" class="card_header">
         <span>日志报告</span>
@@ -103,7 +104,7 @@
         </div>
       </transition>
     </el-card>
-
+    -->
     <el-card :class="['logs_card',{'cardPadding':showTable}]" shadow="hover">
       <div slot="header" class="card_header">
         <span>日志详情</span>
@@ -112,16 +113,16 @@
       <transition name="el-fade-in-linear">
         <el-table
           v-el-table-infinite-scroll="load"
-          height="calc(100vh - 385px)"
+          height="calc(100vh - 270px)"
           v-show="showTable"
           :data="logDataList"
           border
           stripe
           class="log_table"
           highlight-current-row
-          style="width: 100%">
+          style="width: 100%;min-height: 400px">
           <el-table-column
-            width="150"
+            width="140"
             show-overflow-tooltip
             label="项目名称">
             <template slot-scope="scope">
@@ -129,7 +130,7 @@
             </template>
           </el-table-column>
           <el-table-column
-            width="160"
+            width="140"
             show-overflow-tooltip
             label="模块">
             <template slot-scope="scope">
@@ -139,7 +140,7 @@
           <el-table-column
             align="center"
             show-overflow-tooltip
-            width="80"
+            width="70"
             label="日志等级">
             <template slot-scope="scope">
               <el-tag
@@ -155,11 +156,11 @@
             align="center"
             show-overflow-tooltip
             prop="user"
-            width="80"
+            width="70"
             label="工号">
           </el-table-column>
           <el-table-column
-            width="150"
+            width="160"
             show-overflow-tooltip
             label="时间">
             <template slot-scope="scope">
@@ -172,20 +173,20 @@
             <template slot-scope="scope">
               <div class="hide_message" @click="openMessageDetails(scope.row.message)">
                 <p class="message">{{scope.row.message}}</p>
-                <el-button size="mini" type="primary" icon="el-icon-search" circle></el-button>
+<!--                <el-button size="mini" type="primary" icon="el-icon-search" circle></el-button>-->
               </div>
             </template>
           </el-table-column>
           <el-table-column
-            width="280"
+            width="300"
             show-overflow-tooltip
             label="扩展字段">
             <template slot-scope="scope">
               <div @click="openFieldDialog(scope.row)">
-                {{(scope.row.field1? scope.row.field1 + "|": ' |') +
-                (scope.row.field2? scope.row.field2 + "|": ' |') +
-                (scope.row.field3? scope.row.field3 + "|": ' |') +
-                (scope.row.field4? scope.row.field4 + "|": ' |') +
+                {{(scope.row.field1? scope.row.field1 + "^": ' ^') +
+                (scope.row.field2? scope.row.field2 + "^": ' ^') +
+                (scope.row.field3? scope.row.field3 + "^": ' ^') +
+                (scope.row.field4? scope.row.field4 + "^": ' ^') +
                 (scope.row.field5? scope.row.field5: '')
                 }}
               </div>
@@ -297,7 +298,22 @@
         fieldDetails: {}, // 扩展字段详情
       }
     },
+    watch:{
+      /**
+       * @Description: 监听搜索框起始时间
+       * @author Wish
+       * @date 2020/4/14
+      */
+      startTime(val,oval){
+        this.startTime = this.startTime? this.startTime: new Date(new Date() - 1000 * 60 * 60 * 24)
+      }
+    },
     methods: {
+      /**
+       * @Description: 起始时间重置
+       * @author Wish
+       * @date 2020/4/14
+      */
       load() {
         if (this.scrollStatus) {
           this.dataPage = this.dataPage + 1
@@ -424,6 +440,7 @@
         this.messageList = {}
         console.log((new Date(this.startTime).getTime()));
         this.searchForm['startTime'] = this.$getTime(new Date(this.startTime).getTime()).replace(/\s+/g, "T")
+        this.searchForm['endTime'] = this.$getTime(new Date(this.endTime).getTime()).replace(/\s+/g, "T")
         this.searchForm['whichPage'] = this.dataPage
         this.searchForm['pageNums'] = this.dataNum
         this.$axios.get('http://192.168.0.212:8081/log/query', {params: this.searchForm})
@@ -600,11 +617,12 @@
           display: flex;
           align-items: center;
           justify-content: space-between;
+          cursor: pointer;
           .message{
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            margin-right: 20px;
+            /*margin-right: 20px;*/
           }
         }
       }

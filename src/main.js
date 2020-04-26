@@ -26,6 +26,7 @@ import {
   Dialog,
   Form,
   FormItem,
+  OptionGroup,
   Message } from 'element-ui';
 
 Vue.use(Button)
@@ -44,6 +45,7 @@ Vue.use(Card)
 Vue.use(Dialog)
 Vue.use(Form)
 Vue.use(FormItem)
+Vue.use(OptionGroup)
 
 Vue.component(CollapseTransition.name, CollapseTransition)
 

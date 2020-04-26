@@ -34,15 +34,15 @@ module.exports = {
     // 启用 CSS requireModuleExtension for all css / pre-processor files.
     requireModuleExtension: false
   },
-  publicPath: './dist/',
+  publicPath: process.env.NODE_ENV === 'production'? './dist/': './',
   productionSourceMap: false,
-  // devServer: {
-  //   disableHostCheck:true,
-  //   proxy: 'http://192.168.0.100:5000',
+  devServer: {
+    // disableHostCheck:true,
+    proxy: 'http://192.168.0.176:8081',
     // changeOrigin: true,
-    // overlay: {
-    //   errors: true,
-    //   warnings: true
-    // }
-  // }
+  //   // overlay: {
+  //   //   errors: true,
+  //   //   warnings: true
+  //   // }
+  }
 }

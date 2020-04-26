@@ -9,8 +9,11 @@
       <el-table
         :data="settingData"
         border
-
-        height="calc(100vh - 260px)"
+        stripe
+        ref="settingTable"
+        @row-dblclick="dbClickOpenData"
+        highlight-current-row
+        height="calc(100vh - 200px)"
         row-key="project"
         :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
         style="width: 100%;min-height: 400px">
@@ -64,7 +67,7 @@
           align="center"
           label="操作">
           <template slot-scope="scope">
-            <el-button v-if="scope.row.type !== 'menu'" size="mini" @click="openSettingBtn('edit',scope.row)">编辑</el-button>
+            <el-button v-if="scope.row.type !== 'menu'" type="primary" size="mini" @click="openSettingBtn('edit',scope.row)">编辑</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -124,6 +127,8 @@
         settingType: '', // 配置弹窗类型
 
         settingForm: {}, // 配置对象数据
+
+        clickTableName: ['占位符'], // 双击展开列表
       }
     },
     methods:{
@@ -146,8 +151,10 @@
                       return;
                     }
                   }
+                  let number = 0
                   listArr.push({
                     project: el.project.split("_")[0],
+                    ID: index + '_' +el.project.split("_")[0],
                     type: 'menu',
                     children: [el]
                   });
@@ -166,6 +173,24 @@
           this.$message.error('请求错误')
         })
       },
+
+      /**
+       * @Description: 双击table行
+       * @author Wish
+       * @date 2020/4/23
+       */
+      dbClickOpenData(row, column, event){
+        this.clickTableName.forEach((item,index) =>{
+          if(item === row.ID){
+            this.$refs.settingTable.toggleRowExpansion(row, false)
+            this.clickTableName.splice(index)
+          }else {
+            this.$refs.settingTable.toggleRowExpansion(row, true)
+            this.clickTableName.push(row.ID)
+          }
+        })
+      },
+
       /**
        * @Description: 打开新增or编辑弹窗
        * @author Wish

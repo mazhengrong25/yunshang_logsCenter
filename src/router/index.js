@@ -16,6 +16,10 @@ const routes = [
     path: '/readme',
     name: 'Readme',
     component: () => import('../views/readme')
+  },{
+    path: '/logsCharts',
+    name: 'LogsCharts',
+    component: () => import('../views/logsCharts')
   }
 ]
 
