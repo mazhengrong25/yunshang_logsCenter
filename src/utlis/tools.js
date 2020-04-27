@@ -42,3 +42,27 @@ Vue.prototype.$getTime = (data) =>{
     return null
   }
 }
+
+/**
+ * @Description: 日期补全
+ * @author Wish
+ * @date 2020/4/27
+*/
+Vue.prototype.$timeSupplement = (day1,day2) => {
+  const result = []
+  const dayTimes = 24*60*60*1000
+  const startTime = new Date(day1).getTime()
+  const range = new Date(day2).getTime() - startTime
+  let total = 0
+
+  while (total <= range && range > 0) {
+    let time = new Date(startTime + total).toLocaleDateString()
+    let newTime = time.split('/')
+    newTime = newTime.map((res,index) =>{
+      return res < 10? '0' + res : res
+    })
+    result.push(String(newTime).split(',').join('-'))
+    total += dayTimes
+  }
+  return result
+}

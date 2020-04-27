@@ -4,6 +4,7 @@
       <div class="search_box search_project">
         <el-select
           style="min-width: 300px"
+          @change="getModalList(project)"
           v-model="project"
           multiple
           clearable
@@ -22,6 +23,28 @@
           </el-option-group>
         </el-select>
       </div>
+<!--      <div class="search_box search_project">-->
+<!--        <el-select-->
+<!--          style="min-width: 300px"-->
+<!--          v-model="module"-->
+<!--          :disabled="project.length > 1 || project.indexOf('全部渠道') !== -1 || modalList.length < 1"-->
+<!--          multiple-->
+<!--          clearable-->
+<!--          :popper-append-to-body="false"-->
+<!--          placeholder="请选择模块">-->
+<!--          <el-option-group label="勾选全部">-->
+<!--            <el-option label="全部模块" value="全部模块"></el-option>-->
+<!--          </el-option-group>-->
+<!--          <el-option-group label="模块列表">-->
+<!--            <el-option-->
+<!--              v-for="(item ,index) in modalList"-->
+<!--              :key="index"-->
+<!--              :label="item.text"-->
+<!--              :value="item.id"-->
+<!--            ></el-option>-->
+<!--          </el-option-group>-->
+<!--        </el-select>-->
+<!--      </div>-->
       <div class="search_box">
         <el-date-picker
           v-model="searchTime"
@@ -65,14 +88,16 @@
     data(){
       return {
         projectData: [], // 项目名称列表
+        modalList: [], // 项目模块列表
         // 搜索数据
         project: [],  // 项目名称
+        module: [], // 模块名称
         searchTime: [], // 搜索时间
 
         searchHeaderHeight: 32, // 搜索框高度
 
         chartsData: [], // 图表数据
-        chartsType: 'line', // 图表类型 line折线图 bar柱状图
+        chartsType: 'bar', // 图表类型 line折线图 bar柱状图
       }
     },
     methods: {
@@ -89,9 +114,22 @@
         }else {
           data['project'] = this.project
         }
+        /**
         if(this.project.indexOf('全部渠道') > -1){
           this.project = this.projectData
         }
+        if(this.module.length > 0 && this.module.indexOf('全部模块') === -1){
+          data['module'] = this.module
+        }
+        if(this.module.length < 1 || this.module.indexOf('全部模块') > -1){
+          this.module = []
+          this.modalList.map(item =>{
+            this.module.push(item.text)
+          })
+          data['module'] = this.module
+        }
+         */
+
         if(!this.searchTime || this.searchTime.length < 1){
           return this.$message.warning('请选择时间区间')
         }else {
@@ -99,7 +137,7 @@
           data['endTime'] = this.searchTime[1] + 'T23:59:59.000Z'
         }
         // echarts.init(document.getElementById('myChart')).dispose();
-
+        console.log(data);
         this.$axios.post('/statistics/successRate',data)
           .then(res =>{
             if(res.data.code === 0){
@@ -112,6 +150,45 @@
       },
 
       /**
+       * @Description: 获取模块列表
+       * @author Wish
+       * @date 2020/3/20
+       */
+      getModalList(val) {
+        /***
+        if(val.length === 1){
+          this.modalList = [];
+          this.module = [];
+          this.$axios.get('/log/queryList/' + String(val))
+            .then(res => {
+              if (res.data.code === 0) {
+                let modalList = res.data.message;
+                for (let i = 0; i < modalList.length; i++) {
+                  let option = {
+                    "id": modalList[i].split('_')[0] + '_' + modalList[i].split('_')[1],
+                    "text": modalList[i].split('_')[1],
+                  };
+                  this.modalList.push(option)
+                }
+                console.log(this.modalList);
+                const obj = {};
+                this.modalList = this.modalList.reduce(function (item, next) {
+                  obj[next.text] ? '' : obj[next.text] = true && item.push(next);
+                  return item;
+                }, []);
+                console.log(this.modalList);
+              } else {
+                this.$message.warning(res.data.message)
+              }
+            })
+        }else {
+          this.module = []
+          this.modalList = []
+        }
+         */
+      },
+
+      /**
        * @Description: Echarts配置
        * @author Wish
        * @date 2020/4/26
@@ -119,8 +196,9 @@
       echartsOption() {
         let myChart = echarts.init(document.getElementById('myChart'))
 
+        let xAxisData = this.$timeSupplement(this.searchTime[0],this.searchTime[1]); // X轴数据列表
+
         let series = []; // 图表数据处理
-        let xAxisData = []; // X轴数据列表
         let chartLegendData = [];  // 图表数据开关
         let seriesData = []; // 图表data
         let seriesName = []; // 图表data名称
@@ -128,14 +206,22 @@
         this.chartsData.forEach((item ,index) =>{
           console.log(item);
           item.Modules.forEach((oItem, oIndex) =>{
-            chartLegendData.push(oItem.ModuleName.split('T')[0])
+            chartLegendData.push(oItem.ModuleName)
             oItem.Data.forEach((pItem, pIndex) =>{
+              // console.log(pItem);
               seriesData[pIndex] = []
               for (let key in pItem.Nums){
                 seriesName.push(key)
+                // xAxisData.forEach((lItem,lIndex) =>{
+                //   console.log(pItem.Date.split('T', 1));
+                //   if(pItem.Date.split('T',1) === lItem){
+                //     console.log(pItem.Nums[key]);
+                //   }
+                // })
+
                 seriesData[pIndex].push(pItem.Nums[key])
               }
-              xAxisData.push(pItem.Date)
+              // xAxisData.push(pItem.Date.split("T",1))
             })
           })
         })
@@ -143,25 +229,55 @@
         seriesName.forEach((item, index) =>{
           series.push({
             smooth: true,
-            type: 'line',
+            type: this.chartsType,
             name: item,
-            data: seriesData[index]
+            stack: "总量",
+            data: seriesData[index],
+            label: {
+              show: true,
+              position: 'inside',
+              formatter: function (params) {
+                if (params.value > 0) {
+                  return params.value;
+                } else {
+                  return '';
+                }
+              },
+            },
           })
         })
+        console.log(xAxisData);
+        console.log(seriesName);
         console.log(chartLegendData);
         console.log(series);
+        console.log(seriesData);
         // 基于准备好的dom，初始化echarts实例
         // 绘制图表
         myChart.setOption({
-          color: ['#F25645','#72C272','#F2AB45'],
+          color: ['#F56C6C','#67C23A','#909399','#E6A23C'],
           tooltip: {
-            trigger: 'axis'
+            trigger: 'axis',
+            axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+              type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+            },
+            formatter: function(data) {
+              let number = 0
+              data.map(item =>{
+                number += item.data
+              })
+              // console.log(number);
+              let res = data[0].data?data[0].marker+ ' '+data[0].seriesName+'：' + data[0].data + ' <span style="font-size: 12px;margin-left: 10px">(占比：'+ (Math.round(data[0].data / number * 10000) / 100.00).toFixed(1)+ '%)</span>' + '<br />':'';
+              for(let i=1; i< data.length; i++){
+                res += data[i].data?data[i].marker+ ' '+ data[i].seriesName+'：'+data[i].data + ' <span style="font-size: 12px;margin-left: 10px">(占比：'+ (Math.round(data[i].data / number * 10000) / 100.00).toFixed(1)+ '%)</span>' + '<br />': ''
+              }
+              return res;
+            },
           },
           title: {
             text: this.chartsData.length === 1? this.chartsData[0].Project: ''
           },
           legend: {
-            data: chartLegendData,
+            data: seriesName,
             orient: 'horizontal',
             // x 设置水平安放位置，默认全图居中，可选值：'center' ¦ 'left' ¦ 'right' ¦ {number}（x坐标，单位px）
 
@@ -172,24 +288,21 @@
             bottom: '3%',
             containLabel: true
           },
-          dataZoom: [{  // 缩放
-            id: 'dataZoomX',
-            type:"inside",
-            xAxisIndex: [0],
-            filterMode: 'filter'
-          }],
+          // dataZoom: [{  // 缩放
+          //   id: 'dataZoomX',
+          //   xAxisIndex: [0],
+          //   type: 'slider',
+          //   filterMode: 'filter',
+          // }],
           toolbox: {  // 控制条
             show: true,
             feature: {
-              dataZoom: {
-                yAxisIndex:"none"
-              },
               saveAsImage: {},
             }
           },
           xAxis: {
             type: 'category',
-            boundaryGap: false,
+            // boundaryGap: false,
             data: xAxisData
           },
           yAxis: {
@@ -213,6 +326,9 @@
             }
           })
       },
+    },
+    mounted() {
+      // console.log(this.$timeSupplement(new Date('2020-03-20'), new Date('2020-05-10')));
     },
     created() {
       this.getProjectData()
