@@ -27,6 +27,7 @@ import {
   Form,
   FormItem,
   OptionGroup,
+  Loading,
   Message } from 'element-ui';
 
 Vue.use(Button)
@@ -46,6 +47,7 @@ Vue.use(Dialog)
 Vue.use(Form)
 Vue.use(FormItem)
 Vue.use(OptionGroup)
+Vue.use(Loading)
 
 Vue.component(CollapseTransition.name, CollapseTransition)
 

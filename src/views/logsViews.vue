@@ -203,7 +203,7 @@
       <el-button type="text"
                  class="copyJson"
                  v-clipboard:error="onError"
-                 v-clipboard:copy="messageType === 'json'?JSON.stringify(messageDetails):messageType"
+                 v-clipboard:copy="messageType === 'json'?JSON.stringify(messageDetails): messageDetails"
                  v-clipboard:success="onCopy">复制</el-button>
       <json-view v-if="messageType === 'json'" style="max-height: 500px;overflow-y: auto" :json="messageType === 'json'?messageDetails:'{}'"></json-view>
       <p v-else style="max-height: 500px;overflow-y: auto">{{messageDetails}}</p>
@@ -440,7 +440,7 @@
         this.messageList = {}
         console.log((new Date(this.startTime).getTime()));
         this.searchForm['startTime'] = this.$getTime(new Date(this.startTime).getTime()).replace(/\s+/g, "T")
-        this.searchForm['endTime'] = this.$getTime(new Date(this.endTime).getTime()).replace(/\s+/g, "T")
+        this.searchForm['endTime'] = this.endTime?this.$getTime(new Date(this.endTime).getTime()).replace(/\s+/g, "T"):''
         this.searchForm['whichPage'] = this.dataPage
         this.searchForm['pageNums'] = this.dataNum
         this.$axios.get('http://192.168.0.212:8081/log/query', {params: this.searchForm})

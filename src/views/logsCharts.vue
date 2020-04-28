@@ -56,7 +56,7 @@
         </el-date-picker>
       </div>
       <div class="search_box">
-        <el-button type="primary" @click="getChartsData()">搜索</el-button>
+        <el-button type="primary" @click="getChartsData()" v-loading="loading" :disabled="loading">搜索</el-button>
       </div>
     </div>
 
@@ -87,6 +87,7 @@
     name: "logsCharts",
     data(){
       return {
+        loading: false, // 加载
         projectData: [], // 项目名称列表
         modalList: [], // 项目模块列表
         // 搜索数据
@@ -136,8 +137,9 @@
           data['startTime'] = this.searchTime[0] + 'T00:00:00.000Z'
           data['endTime'] = this.searchTime[1] + 'T23:59:59.000Z'
         }
+        this.loading = true
         // echarts.init(document.getElementById('myChart')).dispose();
-        console.log(data);
+        // console.log(data);
         this.$axios.post('/statistics/successRate',data)
           .then(res =>{
             if(res.data.code === 0){
@@ -145,8 +147,13 @@
               setTimeout(() =>{
                 this.echartsOption()
               },1000)
+            }else {
+              this.loading = false
             }
           })
+        .catch(() =>{
+          this.loading = false
+        })
       },
 
       /**
@@ -194,7 +201,6 @@
        * @date 2020/4/26
       */
       echartsOption() {
-        let myChart = echarts.init(document.getElementById('myChart'))
 
         let xAxisData = this.$timeSupplement(this.searchTime[0],this.searchTime[1]); // X轴数据列表
 
@@ -203,56 +209,119 @@
         let seriesData = []; // 图表data
         let seriesName = []; // 图表data名称
 
+        let error = []
+        let fatal = []
+        let info = []
+        let warn = []
+
         this.chartsData.forEach((item ,index) =>{
-          console.log(item);
+
+          console.log('根数据',item);
+          /**
+           * @Description: 数组数据处理
+           * @author Wish
+           * @date 2020/4/28
+          */
+          console.log('模块数据',item.Modules);
+
+          /**
+           * @Description: 模块数据处理
+           * @author Wish
+           * @date 2020/4/28
+          */
+          item.Modules.forEach((aItem, aIndex) =>{
+            console.log('模块名称',aItem.ModuleName);
+            seriesName.push(aItem.ModuleName)
+            console.log('选中日数据列表',aItem);
+            error.push(aItem.TotalError || 0)
+            fatal.push(aItem.TotalFatal || 0)
+            info.push(aItem.TotalInfo || 0)
+            warn.push(aItem.TotalWarn || 0)
+          })
+
+          seriesName.forEach((item, index) =>{
+            series = [{
+              name: 'error',
+              type: 'bar',
+              stack: item,
+              data: error,
+              title: item.Project
+            },{
+              name: 'fatal',
+              type: 'bar',
+              stack: item,
+              data: fatal,
+              title: item.Project
+            },{
+              name: 'info',
+              type: 'bar',
+              stack: item,
+              data: info,
+              title: item.Project
+            },{
+              name: 'warn',
+              type: 'bar',
+              stack: item,
+              data: warn,
+              title: item.Project
+            }]
+          })
+
+          /**
+          this.chartsType = item.Modules.length === 1? 'line': 'bar'
           item.Modules.forEach((oItem, oIndex) =>{
             chartLegendData.push(oItem.ModuleName)
-            oItem.Data.forEach((pItem, pIndex) =>{
-              // console.log(pItem);
-              seriesData[pIndex] = []
-              for (let key in pItem.Nums){
-                seriesName.push(key)
-                // xAxisData.forEach((lItem,lIndex) =>{
-                //   console.log(pItem.Date.split('T', 1));
-                //   if(pItem.Date.split('T',1) === lItem){
-                //     console.log(pItem.Nums[key]);
-                //   }
-                // })
 
-                seriesData[pIndex].push(pItem.Nums[key])
-              }
-              // xAxisData.push(pItem.Date.split("T",1))
-            })
-          })
-        })
-        seriesName = [...new Set(seriesName)]
-        seriesName.forEach((item, index) =>{
-          series.push({
-            smooth: true,
-            type: this.chartsType,
-            name: item,
-            stack: "总量",
-            data: seriesData[index],
-            label: {
-              show: true,
-              position: 'inside',
-              formatter: function (params) {
-                if (params.value > 0) {
-                  return params.value;
-                } else {
-                  return '';
+            xAxisData.forEach((lItem,lIndex) =>{
+              oItem.Data.forEach((pItem, pIndex) =>{
+                seriesData[lIndex] = []
+                for (let key in pItem.Nums){
+                  seriesName.push(key)
+                  if(String(pItem.Date.split('T',1)) === lItem){
+                    seriesData[lIndex].push(pItem.Nums[key])
+                  }else {
+                    seriesData[lIndex].push(0)
+                  }
                 }
-              },
-            },
+              })
+              series.push({
+                smooth: true,
+                type: this.chartsType,
+                name: seriesName[lIndex],
+                stack: oItem.ModuleName,
+                data: seriesData[lIndex],
+                label: {
+                  show: true,
+                  position: 'inside',
+                  formatter: function (params) {
+                    if (params.value > 0) {
+                      return params.value;
+                    } else {
+                      return '';
+                    }
+                  },
+                },
+              })
+
+            })
+
           })
+          */
         })
-        console.log(xAxisData);
-        console.log(seriesName);
-        console.log(chartLegendData);
-        console.log(series);
-        console.log(seriesData);
+
+
+
+
+        // console.log(xAxisData);
+        // console.log(seriesName);
+        // console.log(chartLegendData);
+        // console.log(series);
+        console.log('chartData数据',series);
         // 基于准备好的dom，初始化echarts实例
         // 绘制图表
+        this.loading = false
+        let myChart = echarts.init(document.getElementById('myChart'))
+
         myChart.setOption({
           color: ['#F56C6C','#67C23A','#909399','#E6A23C'],
           tooltip: {
@@ -261,6 +330,7 @@
               type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
             },
             formatter: function(data) {
+              // console.log(data);
               let number = 0
               data.map(item =>{
                 number += item.data
@@ -277,7 +347,7 @@
             text: this.chartsData.length === 1? this.chartsData[0].Project: ''
           },
           legend: {
-            data: seriesName,
+            data: ['error','fatal','info','warn'],
             orient: 'horizontal',
             // x 设置水平安放位置，默认全图居中，可选值：'center' ¦ 'left' ¦ 'right' ¦ {number}（x坐标，单位px）
 
@@ -303,7 +373,7 @@
           xAxis: {
             type: 'category',
             // boundaryGap: false,
-            data: xAxisData
+            data: seriesName
           },
           yAxis: {
             type: 'value'
