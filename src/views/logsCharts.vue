@@ -213,6 +213,15 @@
         let fatal = []
         let info = []
         let warn = []
+        if(this.chartsData.length === 1){
+          if(this.chartsData[0].Modules.length === 1){
+            this.chartsType = 'line'
+          }else {
+            this.chartsType = 'bar'
+          }
+        }else {
+          this.chartsType = 'bar'
+        }
 
         this.chartsData.forEach((item ,index) =>{
 

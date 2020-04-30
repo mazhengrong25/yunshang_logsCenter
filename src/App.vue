@@ -1,6 +1,6 @@
 <template>
   <el-container id="app">
-    <el-header>
+    <el-header v-if="$route.name !== 'Login'">
       <nav-div :navList="navList"></nav-div>
     </el-header>
     <el-main>
@@ -37,7 +37,7 @@
             name: '使用说明',
             path: '/readme'
           }
-        ]
+        ],
       }
     },
   }

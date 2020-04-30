@@ -20,10 +20,15 @@ const routes = [
     path: '/logsCharts',
     name: 'LogsCharts',
     component: () => import('../views/logsCharts')
+  },{
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/login')
   }
 ]
 
 const router = new VueRouter({
+  mode: 'history',
   base: process.env.BASE_URL,
   routes
 })
