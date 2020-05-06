@@ -4,6 +4,17 @@
     <div class="nav_list">
       <router-link v-for="(item,index) in navList" :key="index" class="nav_btn" :to="item.path">{{item.name}}</router-link>
     </div>
+    <div class="user_info">
+      <el-dropdown trigger="click">
+        <div class="el-dropdown-link">
+          <span class="user_name">{{userName}}</span><i class="el-icon-arrow-down el-icon--right"></i>
+        </div>
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item><div @click="signOut()">退出登录</div></el-dropdown-item>
+        </el-dropdown-menu>
+      </el-dropdown>
+
+    </div>
   </nav>
 </template>
 
@@ -15,6 +26,25 @@
         type: Array,
         default: () => []
       }
+    },
+    data(){
+      return {
+        userName: ''
+      }
+    },
+    methods:{
+      /**
+       * @Description: 退出登录按钮
+       * @author Wish
+       * @date 2020/5/6
+      */
+      signOut(){
+        // localStorage.clear()
+        this.$router.push('/login')
+      },
+    },
+    mounted() {
+      this.userName = localStorage.getItem('login')? JSON.parse(localStorage.getItem('login')).username: ''
     }
   }
 </script>
@@ -59,6 +89,17 @@
         &:not(:last-child){
           margin-right: 20px;
         }
+      }
+    }
+    .user_info{
+      cursor: pointer;
+      margin-left: auto;
+      /deep/.el-dropdown{
+        color: #fff;
+
+      }
+      .user_name{
+        font-size: 18px;
       }
     }
   }

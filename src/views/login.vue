@@ -10,15 +10,38 @@
 
         <transition name="el-fade-in-linear">
           <div class="login_form" v-show="loginFormHide">
-            <el-input  v-model="userName" @change="userType = false" :class="['login_input',{'input_err': userType}]" type="text" placeholder="Username"></el-input>
-            <el-input  v-model="password" @change="passType = false" :class="['login_input',{'input_err': passType}]" type="password" placeholder="Password"></el-input>
-            <div class="login_btn_box">
-              <button class="checked_btn el-icon-arrow-right" @click="showLoginBtn = !showLoginBtn"></button>
-              <div class="register_box">
-                <button class="login_btn" v-if="showLoginBtn" @click="loginBtn">Login</button>
-                <button style="color: #67C23A" class="register_btn" @click="registerBtn">注册</button>
-              </div>
+            <div class="login_form_box" v-show="showLoginBox">
+              <el-input :disabled="!showLoginBtn" v-model="login.username" @change="userType = false" :class="['login_input',{'input_err': userType}]" type="text" placeholder="用户名"></el-input>
+              <el-input @keyup.enter.native="loginBtn()" :disabled="!showLoginBtn" v-model="login.password" @change="passType = false" :class="['login_input',{'input_err': passType}]" type="password" placeholder="密 码" show-password></el-input>
             </div>
+
+            <div class="register_form_box" v-show="showRegisterBox">
+              <el-input v-model="register.job_num" class='login_input' type="text" placeholder="工 号"></el-input>
+              <el-input v-model="register.username" class='login_input' type="text" placeholder="用户名"></el-input>
+              <el-input @keyup.enter.native="registerBtn()" v-model="register.password" class='login_input' type="text" placeholder="密 码"></el-input>
+            </div>
+
+            <div class="findBack_form_box" v-show="!showRegisterBox && !showLoginBox">
+              <el-input v-model="findBack.job_num" class='login_input' type="text" placeholder="工 号"></el-input>
+              <el-input @keyup.enter.native="findBackBtn" v-model="findBack.username" class='login_input' type="text" placeholder="用户名"></el-input>
+            </div>
+
+
+            <div class="login_btn_box">
+<!--              <button :style="{'color': showLoginBox?'rgb(103, 194, 58)':showRegisterBox?'rgba(0, 123, 255, 0.8)': 'rgba(0, 123, 255, 0.8)'}" class="checked_btn el-icon-arrow-right" @click="checkedBtn"></button>-->
+              <div class="register_box" v-show="showLoginBox">
+                <button class="login_btn" @click="loginBtn">登  录</button>
+              </div>
+              <div class="register_box" v-show="showRegisterBox">
+                <button  class="register_btn" @click="registerBtn">注册</button>
+              </div>
+              <div class="register_box" v-show="!showRegisterBox && !showLoginBox">
+                <button  class="findBack_btn" @click="findBackBtn">找回密码</button>
+              </div>
+              <el-button v-show="showRegisterBtn" style="color: #fff" type="text" class="checked_register_btn" @click="checkedBtn">{{!showLoginBox? '返回登录':"注册账号"}}</el-button>
+              <el-button v-show="showFindBackBtn" style="color: #fff;margin-left: auto" type="text" class="checked_findBack_btn" @click="checkedFindBackBtn">找回密码</el-button>
+            </div>
+
           </div>
         </transition>
       </div>
@@ -46,14 +69,21 @@
     name: "login",
     data(){
       return {
-        userName: '',  // 用户名
-        password: '', // 密码
+        login: {},  // 登录
+        register: {},  // 注册
+        findBack: {}, // 找回密码
 
         loginFormHide: true, // 登录框
         userType: false, // 用户名状态
         passType: false, // 密码状态
 
-        showLoginBtn: true, // 登录按钮
+        showLoginBtn: true, // 登录按钮切换状态
+
+        showLoginBox: true, // 登录窗口
+        showRegisterBox: false, // 注册窗口
+
+        showRegisterBtn: true, // 注册账号
+        showFindBackBtn: true, // 找回密码按钮
       }
     },
     methods:{
@@ -63,23 +93,95 @@
        * @date 2020/4/30
       */
       checkedBtn(){
-        this.showLoginBtn = !this.showLoginBtn;
+        if(!this.showRegisterBox && !this.showLoginBox){
+          this.checkedLogin()
+        }else {
+          this.showLoginBtn = !this.showLoginBtn;
+          this.showRegisterBox = !this.showLoginBtn
+          this.showLoginBox = this.showLoginBtn
+        }
+
       },
+
+      /**
+       * @Description: 切换登录界面
+       * @author Wish
+       * @date 2020/5/6
+      */
+      checkedLogin(){
+        this.showLoginBox = true;
+        this.showRegisterBox = false
+        this.showFindBackBtn = true
+        this.login = {}
+      },
+
 
       /**
        * @Description: 注册
        * @author Wish
        * @date 2020/4/30
       */
-      registerBtn(){},
+      registerBtn(){
+        if(!this.register['job_num'] || !this.register['username'] || !this.register['password']){
+          return this.$message.warning('请填写' + (!this.register['job_num']?'工号':!this.register['username']?'用户名':!this.register['password']?'密码':''))
+        }
+        if(!Number.isFinite(Number(this.register.job_num))){
+          return this.$message.warning('工号仅能为数字，请输入正确的工号')
+        }
+        let pattern = new RegExp('^\\w+$')
+        if(!pattern.test(this.register.username)){
+          return this.$message.warning('用户名仅能为英文、数字与下划线组合，请输入正确的用户名')
+        }
+        this.$axios.post('/user/register',this.register)
+          .then(res =>{
+            if(res.data.code === 0){
+              this.$message.success(res.data.message)
+              this.login = {
+                username: this.register.username,
+                password: this.register.password
+              }
+              this.checkedBtn()
+            }
+          })
+        console.log(this.register);
+      },
+
+      /**
+       * @Description: 切换找回密码界面
+       * @author Wish
+       * @date 2020/4/30
+      */
+      checkedFindBackBtn(){
+        this.showRegisterBox = false
+        this.showLoginBox = false
+        this.showFindBackBtn = false
+      },
 
       /**
        * @Description: 找回密码
        * @author Wish
-       * @date 2020/4/30
+       * @date 2020/5/6
       */
       findBackBtn(){
-
+        if(!this.findBack['job_num'] || !this.findBack['username']){
+          return this.$message.warning('请填写' + (!this.findBack['job_num']?'工号':!this.findBack['username']?'用户名':''))
+        }
+        this.$axios.post('/user/findBack',this.findBack)
+          .then(res =>{
+            let message = res.data.message
+            if(res.data.code === 0){
+              if(message.includes('密码')){
+                this.$alert(res.data.message, '您的密码', {
+                  confirmButtonText: '确定',
+                });
+              }else {
+                this.$message.warning(res.data.message)
+              }
+            }else {
+              this.$message.warning(res.data.message)
+            }
+            console.log(res);
+          })
       },
 
 
@@ -89,24 +191,26 @@
        * @date 2020/4/30
       */
       loginBtn(){
-        if(!this.userName || !this.password){
-          this.userType = !this.userName
-          this.passType = !this.password
-          return this.$message.warning('请输入'+ (this.userName?'密码': this.password? '用户名': '用户名和密码'))
+        localStorage.clear()
+        if(!this.login['username'] || !this.login['password']){
+          this.userType = !this.login['username']
+          this.passType = !this.login['password']
+          return this.$message.warning('请输入'+ (this.login['username']?'密码': this.login['password']? '用户名': '用户名和密码'))
         }else {
           let data = {
-            username: this.userName,
-            password: this.password
+            username: this.login['username'],
+            password: this.login['password']
           }
           this.$axios.post('/user/login',data)
             .then(res =>{
               if(res.data.code === 0){
-                if(!res.data.data){
-                  // 用户名或密码不正确
-                  this.$message.warning(res.data.message)
+                if(res.data.message === '登录成功'){
+                  this.$message.success(res.data.message)
+                  localStorage.login = JSON.stringify(this.login);
+                  this.$router.push('/')
                 }else {
-                  // 成功获取到数据
-
+                  this.$message.warning(res.data.message)
+                  this.showFindBackBtn = true
                 }
               }else {
                 this.$message.warning(res.data.message)
@@ -116,8 +220,16 @@
         }
       },
     },
+    mounted() {
+      let login = localStorage.login?JSON.parse(localStorage.login):null
+      if(login){
+        this.login = login
+      }
+    },
     created() {
-
+      // if(localStorage.getItem('login')){ //登陆了自动跳到首页，来阻止重复登陆
+      //   this.$router.push("/")
+      // }
     }
   }
 </script>
@@ -157,9 +269,9 @@
     text-align: center;
 
     .title{
-      font-size: 35px;
+      font-size: 30px;
       transition-duration: 1s;
-      transition-timing-function: ease-in-put;
+      transition-timing-function: ease-in-out;
       font-weight: 200;
       color: #fff;
       display: inline-flex;
@@ -180,9 +292,9 @@
           position: absolute;
           display: block;
           left: 0;
-          top: 0;
-          height: 100%;
-          background: #fff;
+          top: 6px;
+          height: 75%;
+          background: #ffffff94;
           width: 2px;
         }
       }
@@ -197,6 +309,25 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
+
+    .login_form_box{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .register_form_box{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .findBack_form_box{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
 
     .login_input{
       width: unset;
@@ -226,11 +357,17 @@
         }
         &:focus{
           background-color: white;
-          width: 350px;
+          /*width: 350px;*/
 
           color: @prim;
         }
       }
+      /*/deep/.el-input__suffix{*/
+      /*  color: #fff;*/
+      /*  .el-input__clear{*/
+      /*    color: #fff;*/
+      /*  }*/
+      /*}*/
 
       &.input_err{
         border-color: fade(red, 40%);
@@ -246,6 +383,7 @@
       width: 300px;
       display: flex;
       align-items: center;
+      position: relative;
       button{
         appearance: none;
         outline: 0;
@@ -277,10 +415,25 @@
         font-size: 16px;
         .register_btn{
           flex: 1;
-          &:last-child{
-            margin-left: 5px;
-          }
+          /*&:last-child{*/
+          /*  margin-left: 5px;*/
+          /*}*/
         }
+        .findBack_btn{
+          flex: 1;
+        }
+      }
+      .checked_register_btn{
+        position: absolute;
+        bottom: -40px;
+        left: 0;
+        background: transparent;
+      }
+      .checked_findBack_btn{
+        position: absolute;
+        bottom: -40px;
+        right: 0;
+        background: transparent;
       }
     }
 

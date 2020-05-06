@@ -33,4 +33,22 @@ const router = new VueRouter({
   routes
 })
 
+/**
+ * @Description: 路由守卫  判断localstorage是否拥有账号密码
+ * @author Wish
+ * @date 2020/5/6
+*/
+router.beforeEach((to, from, next) => {
+  if(to.path=="/login"){
+    next();
+  }else{
+    if(localStorage.login){
+      next()
+    }else{
+      next({path:"/login"})
+    }
+  }
+
+})
+
 export default router

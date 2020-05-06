@@ -2,7 +2,13 @@
   <div class="logs_views">
     <div class="search_box">
       <div class="search_list" style="width: 200px">
-        <el-select v-model="searchForm.project" size="small" placeholder="请选择项目" clearable @change="getModalList(searchForm.project)">
+        <el-select
+          v-model="searchForm.project"
+          size="small"
+          :popper-append-to-body="false"
+          placeholder="请选择项目"
+          clearable
+          @change="getModalList(searchForm.project)">
           <el-option
             v-for="(item,index) in objectList"
             :key="index"
@@ -215,23 +221,23 @@
       width="400px">
       <div class="field_box">
         <div class="field_list">
-          <p>订单号</p>
+          <p>{{fieldDetailsName[0]? fieldDetailsName[0] : 'field1'}}：</p>
           <span>{{fieldDetails.field1}}</span>
         </div>
         <div class="field_list">
-          <p>是否自愿</p>
+          <p>{{fieldDetailsName[1]? fieldDetailsName[1] : 'field2'}}：</p>
           <span>{{fieldDetails.field2}}</span>
         </div>
         <div class="field_list">
-          <p>退票单号</p>
+          <p>{{fieldDetailsName[2]? fieldDetailsName[2] : 'field3'}}：</p>
           <span>{{fieldDetails.field3}}</span>
         </div>
         <div class="field_list">
-          <p>渠道名称</p>
+          <p>{{fieldDetailsName[3]? fieldDetailsName[3] : 'field4'}}：</p>
           <span>{{fieldDetails.field4}}</span>
         </div>
         <div class="field_list">
-          <p>队列名称</p>
+          <p>{{fieldDetailsName[4]? fieldDetailsName[4] : 'field5'}}：</p>
           <span>{{fieldDetails.field5}}</span>
         </div>
 
@@ -295,7 +301,11 @@
         messageNum: '',
 
         showFieldDetails: false, // 扩展字段详情弹窗
+        fieldDetailsName: [], // 扩展字段名称
         fieldDetails: {}, // 扩展字段详情
+
+        username: '', // 用户名
+        userProjects: [], // 用户项目列表
       }
     },
     watch:{
@@ -351,16 +361,16 @@
        * @author Wish
        * @date 2020/3/20
        */
-      getProjectList() {
-        this.$axios.get('http://192.168.0.212:8081/log/queryList')
-          .then(res => {
-            if (res.data.code === 0) {
-              this.objectList = res.data.message
-            } else {
-              this.$message.warning(res.data.message)
-            }
-          })
-      },
+      // getProjectList() {
+      //   this.$axios.get('/log/queryList')
+      //     .then(res => {
+      //       if (res.data.code === 0) {
+      //         this.objectList = res.data.message
+      //       } else {
+      //         this.$message.warning(res.data.message)
+      //       }
+      //     })
+      // },
       /**
        * @Description: 获取模块列表
        * @author Wish
@@ -370,28 +380,36 @@
         this.modalList = [];
         this.searchForm.module = '';
         this.fieldListPlace = '请输入关键字';
-        this.$axios.get('http://192.168.0.212:8081/log/queryList/' + val)
-          .then(res => {
-            if (res.data.code === 0) {
-              let modalList = res.data.message;
-              for (let i = 0; i < modalList.length; i++) {
-                let option = {
-                  "id": modalList[i].split('_')[0] + '_' + modalList[i].split('_')[1],
-                  "text": modalList[i].split('_')[1],
-                };
-                this.modalList.push(option)
-              }
-              console.log(this.modalList);
-              const obj = {};
-              this.modalList = this.modalList.reduce(function (item, next) {
-                obj[next.text] ? '' : obj[next.text] = true && item.push(next);
-                return item;
-              }, []);
-              console.log(this.modalList);
-            } else {
-              this.$message.warning(res.data.message)
-            }
-          })
+        this.userProjects.forEach(item => {
+          if(val === item.split('_')[0]){
+            this.modalList.push({
+              id: item,
+              text: item.split('_')[1]
+            })
+          }
+        })
+        // this.$axios.get('/log/queryList/' + val)
+        //   .then(res => {
+        //     if (res.data.code === 0) {
+        //       let modalList = res.data.message;
+        //       for (let i = 0; i < modalList.length; i++) {
+        //         let option = {
+        //           "id": modalList[i].split('_')[0] + '_' + modalList[i].split('_')[1],
+        //           "text": modalList[i].split('_')[1],
+        //         };
+        //         this.modalList.push(option)
+        //       }
+        //       console.log(this.modalList);
+        //       const obj = {};
+        //       this.modalList = this.modalList.reduce(function (item, next) {
+        //         obj[next.text] ? '' : obj[next.text] = true && item.push(next);
+        //         return item;
+        //       }, []);
+        //       console.log(this.modalList);
+        //     } else {
+        //       this.$message.warning(res.data.message)
+        //     }
+        //   })
       },
       /**
        * @Description: 获取关键字列表
@@ -403,6 +421,9 @@
           .then(res => {
             if (res.data.code === 0) {
               this.fieldListPlace = res.data.fieldName
+
+              this.fieldDetailsName = res.data.fieldName.split('^')
+              this.fieldDetailsName = this.fieldDetailsName.splice(this.fieldDetailsName.map(item => item === ''),1)
               // this.fieldList = [...new Set(fieldList.split('|'))]
               // if(this.fieldList.length <= 1 && this.fieldList[0] === ''){
               //   this.fieldListPlace = '暂无关键字列表'
@@ -495,6 +516,31 @@
         }
       },
 
+      /**
+       * @Description: 获取用户项目列表
+       * @author Wish
+       * @date 2020/5/6
+       */
+      getUserProjects(){
+        let data = {
+          username: this.username
+        }
+        this.$axios.post('/user/getProjects',data)
+          .then(res =>{
+            if(res.data.code === 0){
+              this.userProjects = res.data.message
+              this.userProjects.forEach(item => {
+                this.objectList.push(item.split('_')[0])
+              })
+              this.objectList = [...new Set(this.objectList)]
+              console.log(this.objectList);
+              // this.userProjects = res.data.message
+            }else {
+              this.$message.warning(res.data.message)
+            }
+          })
+      },
+
 
       onCopy(e) {
         this.$message({
@@ -508,10 +554,15 @@
           message: '复制失败！',
           type: 'error'
         })
-      }
+      },
+
+
     },
     created() {
-      this.getProjectList()
+      this.username = JSON.parse(localStorage.getItem('login')).username
+      this.getUserProjects()
+
+      // this.getProjectList()
     }
   }
 </script>
@@ -527,6 +578,13 @@
       .search_list{
         margin-right: 10px;
         margin-bottom: 10px;
+        /deep/.el-select-dropdown{
+          .el-scrollbar{
+            .el-select-dropdown__wrap{
+              max-height: 75vh;
+            }
+          }
+        }
         .el-date-editor{
           width: 100%;
         }
@@ -647,7 +705,7 @@
       display: flex;
       align-items: center;
       >p{
-        width: 100px;
+        margin-right: 15px;
       }
       &:not(:last-child){
         margin-bottom: 15px;

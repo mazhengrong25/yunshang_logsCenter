@@ -28,6 +28,15 @@ import {
   FormItem,
   OptionGroup,
   Loading,
+  Alert,
+  MessageBox,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  Checkbox,
+  CheckboxGroup,
+  Switch,
+  ButtonGroup,
   Message } from 'element-ui';
 
 Vue.use(Button)
@@ -48,11 +57,21 @@ Vue.use(Form)
 Vue.use(FormItem)
 Vue.use(OptionGroup)
 Vue.use(Loading)
+Vue.use(Alert);
+Vue.use(Dropdown);
+Vue.use(DropdownItem);
+Vue.use(DropdownMenu);
+Vue.use(Checkbox);
+Vue.use(CheckboxGroup);
+Vue.use(Switch);
+Vue.use(ButtonGroup);
 
 Vue.component(CollapseTransition.name, CollapseTransition)
 
 Vue.prototype.$message = Message;
 Vue.prototype.$ELEMENT = { size: 'small' };
+Vue.prototype.$msgbox = MessageBox;
+Vue.prototype.$alert = MessageBox.alert;
 
 import axios from "axios";
 Vue.prototype.$axios = axios;
