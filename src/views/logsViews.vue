@@ -184,11 +184,11 @@
             </template>
           </el-table-column>
           <el-table-column
-            width="300"
+            min-width="300"
             show-overflow-tooltip
             label="扩展字段">
             <template slot-scope="scope">
-              <div @click="openFieldDialog(scope.row)">
+              <div style="cursor: pointer" @click="openFieldDialog(scope.row)">
                 {{(scope.row.field1? scope.row.field1 + "^": ' ^') +
                 (scope.row.field2? scope.row.field2 + "^": ' ^') +
                 (scope.row.field3? scope.row.field3 + "^": ' ^') +
@@ -219,29 +219,38 @@
       title="扩展字段详情"
       :visible.sync="showFieldDetails"
       width="400px">
-      <div class="field_box">
-        <div class="field_list">
-          <p>{{fieldDetailsName[0]? fieldDetailsName[0] : 'field1'}}：</p>
-          <span>{{fieldDetails.field1}}</span>
-        </div>
-        <div class="field_list">
-          <p>{{fieldDetailsName[1]? fieldDetailsName[1] : 'field2'}}：</p>
-          <span>{{fieldDetails.field2}}</span>
-        </div>
-        <div class="field_list">
-          <p>{{fieldDetailsName[2]? fieldDetailsName[2] : 'field3'}}：</p>
-          <span>{{fieldDetails.field3}}</span>
-        </div>
-        <div class="field_list">
-          <p>{{fieldDetailsName[3]? fieldDetailsName[3] : 'field4'}}：</p>
-          <span>{{fieldDetails.field4}}</span>
-        </div>
-        <div class="field_list">
-          <p>{{fieldDetailsName[4]? fieldDetailsName[4] : 'field5'}}：</p>
-          <span>{{fieldDetails.field5}}</span>
-        </div>
+      <el-checkbox-group
+        v-model="fieldDetailsList"
+        class="field_box">
+          <div class="field_list">
+            <p>{{fieldDetailsName[0]? fieldDetailsName[0] : 'field1'}}：</p>
+            <!--          <span>{{fieldDetails.field1}}</span>-->
+            <el-checkbox @change="checkedFieldList(fieldDetails.field1,0)" :label="fieldDetails.field1"></el-checkbox>
 
-      </div>
+          </div>
+          <div class="field_list">
+            <p>{{fieldDetailsName[1]? fieldDetailsName[1] : 'field2'}}：</p>
+            <!--          <span>{{// fieldDetails.field2}}</span>-->
+            <el-checkbox @change="checkedFieldList(fieldDetails.field2,1)" :label="fieldDetails.field2"></el-checkbox>
+          </div>
+          <div class="field_list">
+            <p>{{fieldDetailsName[2]? fieldDetailsName[2] : 'field3'}}：</p>
+            <!--          <span>{{fieldDetails.field3}}</span>-->
+            <el-checkbox @change="checkedFieldList(fieldDetails.field3,2)" :label="fieldDetails.field3"></el-checkbox>
+
+          </div>
+          <div class="field_list">
+            <p>{{fieldDetailsName[3]? fieldDetailsName[3] : 'field4'}}：</p>
+            <!--          <span>{{fieldDetails.field4}}</span>-->
+            <el-checkbox @change="checkedFieldList(fieldDetails.field4,3)" :label="fieldDetails.field4"></el-checkbox>
+          </div>
+          <div class="field_list">
+            <p>{{fieldDetailsName[4]? fieldDetailsName[4] : 'field5'}}：</p>
+            <!--          <span>{{fieldDetails.field5}}</span>-->
+            <el-checkbox @change="checkedFieldList(fieldDetails.field5,4)" :label="fieldDetails.field5"></el-checkbox>
+          </div>
+
+        </el-checkbox-group>
     </el-dialog>
 
   </div>
@@ -306,6 +315,9 @@
 
         username: '', // 用户名
         userProjects: [], // 用户项目列表
+
+        fieldDetailsList: [],  // 选中关键字列表
+        fieldDetailsData: [],  // 选中关键字列表处理
       }
     },
     watch:{
@@ -332,7 +344,7 @@
           this.searchForm['pageNums'] = this.dataNum
           // this.$message.success('拉取第'+this.dataPage+'页的数据');
 
-          this.$axios.get('http://192.168.0.212:8081/log/query', {params: this.searchForm})
+          this.$axios.get('/log/query', {params: this.searchForm})
             .then(res => {
               if (res.data.code === 0) {
                 let dataList = res.data.message
@@ -417,13 +429,13 @@
        * @date 2020/3/23
        */
       getFieldList(val) {
-        this.$axios.get('http://192.168.0.212:8081/log/queryList/' + this.searchForm.module + '/' + val)
+        this.$axios.get('/log/queryList/' + this.searchForm.module + '/' + val)
           .then(res => {
             if (res.data.code === 0) {
               this.fieldListPlace = res.data.fieldName
 
-              this.fieldDetailsName = res.data.fieldName.split('^')
-              this.fieldDetailsName = this.fieldDetailsName.splice(this.fieldDetailsName.map(item => item === ''),1)
+              this.fieldDetailsName = res.data.fieldName.replace(/\s+/g, "").split('^')
+              console.log(this.fieldDetailsName);
               // this.fieldList = [...new Set(fieldList.split('|'))]
               // if(this.fieldList.length <= 1 && this.fieldList[0] === ''){
               //   this.fieldListPlace = '暂无关键字列表'
@@ -448,6 +460,30 @@
         this.fieldDetails = val
         console.log(this.fieldDetails);
         this.showFieldDetails = true
+        this.fieldDetailsList = []
+        this.fieldDetailsData = ['','','','','']
+      },
+
+      /**
+       * @Description: 选中扩展字段
+       * @author Wish
+       * @date 2020/5/7
+      */
+      // checkedField(val,index,type){
+      //   console.log(val, index, type);
+      //   console.log(this.fieldDetailsList);
+      // },
+      checkedFieldList(val,index){
+        console.log(val,index);
+        if(val !== this.fieldDetailsData[index]){
+          this.fieldDetailsData[index] = val
+        }else {
+          this.fieldDetailsData[index] = ''
+        }
+
+        // console.log(this.fieldDetailsList);
+        console.log(this.fieldDetailsData);
+        this.searchForm.field1 = String(this.fieldDetailsData).replace(/,/g, "^")
       },
 
       /**
@@ -464,7 +500,7 @@
         this.searchForm['endTime'] = this.endTime?this.$getTime(new Date(this.endTime).getTime()).replace(/\s+/g, "T"):''
         this.searchForm['whichPage'] = this.dataPage
         this.searchForm['pageNums'] = this.dataNum
-        this.$axios.get('http://192.168.0.212:8081/log/query', {params: this.searchForm})
+        this.$axios.get('/log/query', {params: this.searchForm})
           .then(res => {
             if (res.data.code === 0) {
               let dataList = res.data.message
@@ -701,11 +737,18 @@
   .field_box{
     padding-top: 25px;
     padding-left: 15px;
+    font-size: 14px;
     .field_list{
       display: flex;
       align-items: center;
       >p{
         margin-right: 15px;
+        min-width: 110px;
+      }
+      /deep/.el-checkbox{
+        .el-checkbox__input{
+          display: none;
+        }
       }
       &:not(:last-child){
         margin-bottom: 15px;

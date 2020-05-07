@@ -9,6 +9,7 @@
             <el-button @click="submitEditProject('save')" type="primary">保存</el-button>
             <el-button @click="submitEditProject('close')">取消</el-button>
           </el-button-group>
+          <el-button v-if="!showEditBtn" type="primary" style="margin-left: 10px" @click="checkedAllProject">开/关所有项目</el-button>
           <el-button style="padding: 9px 30px;margin-left: 10px" type="primary" @click="openSettingBtn('add')">添加</el-button>
         </div>
         </div>
@@ -23,6 +24,7 @@
         height="calc(100vh - 200px)"
         row-key="project"
         :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+        :row-class-name="tableRowClassName"
         style="width: 100%;min-height: 400px">
         <el-table-column
           prop="project"
@@ -59,11 +61,11 @@
           <template slot-scope="scope">
             <el-switch
               :disabled="showEditBtn"
-              @change="switchShowType(scope.row)"
-              v-if="scope.row.type !== 'menu'"
-              v-model="scope.row.type"
-              active-color="#13ce66"
-              inactive-color="#ff4949">
+              @change="switchShowType(scope.row,$event)"
+              :style="{'left': scope.row.type === 'menu'?'-12px': 0}"
+              v-model="scope.row.status"
+              active-color="rgba(0, 123, 255, 0.8)"
+              inactive-color="#909399">
             </el-switch>
           </template>
         </el-table-column>
@@ -199,6 +201,9 @@
         username: '', // 用户名
         showEditBtn: true, // 编辑项目按钮状态
         userProjects: [],  // 用户项目列表
+
+        allProjectStatus: false, // 所有项目状态
+        allProjectLength: 0,  // 所有项目数量
       }
     },
     methods:{
@@ -212,13 +217,15 @@
           .then(res =>{
             if(res.data.code === 0){
               let settingData =  res.data.message
+              this.allProjectLength = settingData.length
               if(settingData.length> 0){
                 const listArr = [];
+
                 settingData.forEach((el,index) =>{
                   // console.log(el);
                   this.userProjects.forEach(item =>{
                     if(item === el.project){
-                      el['type'] = true
+                      el['status'] = true
                     }
                   })
                   for(let i=0; i<listArr.length; i++){
@@ -232,7 +239,8 @@
                     project: el.project.split("_")[0],
                     ID: index + '_' +el.project.split("_")[0],
                     type: 'menu',
-                    children: [el]
+                    children: [el],
+                    status: false
                   });
                 });
                 listArr.forEach(item =>{
@@ -279,10 +287,13 @@
         this.settingDialog = true
         if(type !== 'add'){
           val.message_way = val.message_way instanceof Array?val.message_way:val.message_way.split(",")
+          this.settingForm = JSON.parse(JSON.stringify(val))
+        }else {
+          this.settingForm = {
+            message_way: []
+          }
         }
-        this.settingForm = val ? val: {
-          message_way: []
-        }
+
       },
 
       /**
@@ -292,16 +303,28 @@
       */
       saveSettingData(){
         let data
+        if(this.settingForm.message_way.length > 1){
+          for(let i = 0; i < this.settingForm.message_way.length; i++) {
+            if(this.settingForm.message_way[i] === 'SMS' && !this.settingForm.phone_no){
+              return this.$message.warning('手机号码必填')
+            }
+          }
+        }
         if(this.settingType === 'add'){
-          this.settingForm.max_alarm_num = Number(this.settingForm.max_alarm_num)
-          this.settingForm.number = Number(this.settingForm.number)
-          this.settingForm.message_way = String(this.settingForm.message_way)
-          data = this.settingForm
+          data = JSON.parse(JSON.stringify(this.settingForm))
+          data['max_alarm_num'] = Number(this.settingForm.max_alarm_num)
+          data['number'] = Number(this.settingForm.number)
+          data['message_way'] = String(this.settingForm.message_way)
         }else {
           data = {
             project: this.settingForm.project,
             number: Number(this.settingForm.max_alarm_num),
             author: this.settingForm.author,
+            job_no: this.settingForm.job_no,
+            message_way: String(this.settingForm.message_way),
+            phone_no: this.settingForm.phone_no,
+            extra_field: this.settingForm.extra_field,
+            max_alarm_num: Number(this.settingForm.max_alarm_num)
           }
         }
         let url = this.settingType === 'add'? '/settings/set': '/settings/alarm'
@@ -357,16 +380,101 @@
 
 
       /**
+       * @Description: 开/关所有项目
+       * @author Wish
+       * @date 2020/5/7
+      */
+      checkedAllProject(){
+        let that = this
+        let newDataLength = JSON.parse(JSON.stringify(that.userProjects.length))
+        this.settingData.forEach(item =>{
+          item.children.forEach(oitem =>{
+            if(that.allProjectLength === newDataLength){
+              that.userProjects = []
+              oitem.status = false
+              item.status = false
+            }else {
+              oitem.status = true
+              item.status = true
+              that.userProjects.push(oitem.project)
+            }
+          })
+        })
+        that.userProjects = [...new Set(that.userProjects)]
+      },
+
+
+      /**
        * @Description: 切换数据开关
        * @author Wish
        * @date 2020/5/6
       */
-      switchShowType(val){
-        if(val.type){
+      switchShowType(val,data){
+        console.log(val,data);
+
+        this.$forceUpdate()
+        // 子级列表
+        if(val.status && val.type !== 'menu'){
           this.userProjects.push(val.project)
-        }else {
+        }else if(val.type !== 'menu') {
           this.userProjects.splice(this.userProjects.findIndex(item => item === val.project), 1)
+          this.settingData.forEach(item =>{
+            item.children.forEach(oitem =>{
+              if(oitem.project === val.project){
+                item.status = false
+              }
+            })
+          })
         }
+
+        // 父级
+        if(val.status && val.type === 'menu'){
+          this.settingData.forEach(res => res.status = res.ID === val.ID )
+          val.children.forEach(res =>{
+            res.status = true
+            this.userProjects.push(res.project)
+          })
+
+          this.userProjects = [...new Set(this.userProjects)]
+          console.log('添加');
+        }else if(val.type === 'menu'){
+          val.children.forEach(res =>{
+            res.status = false
+            this.userProjects.splice(this.userProjects.findIndex(item => item === res.project), 1)
+          })
+          console.log('删除');
+        }
+        console.log(this.userProjects);
+      },
+
+
+      /**
+       * @Description: 配置table行属性
+       * @author Wish
+       * @date 2020/5/7
+      */
+      tableRowClassName({row, rowIndex}) {
+        if(!row.status && !row.type){
+          return 'close-row';
+        }
+        let childrenList = []
+        if (row.type === 'menu') {
+          row.children.map(res =>{
+            if(res.status){
+              childrenList.push(res.project)
+            }
+          })
+          if(row.children.length === childrenList.length){
+            row['status'] =  true
+          }
+          if (childrenList.length < 1){
+            return 'close-row';
+          }
+        }
+        // else if (rowIndex === 3) {
+        //   return 'success-row';
+        // }
+        return '';
       },
 
 
@@ -401,6 +509,11 @@
 <style scoped lang="less">
   .setting_views{
 
+  }
+  /deep/.el-table{
+    .close-row{
+      opacity: .5;
+    }
   }
   /deep/.el-dialog__body{
     padding-bottom: unset;

@@ -113,7 +113,14 @@
         if(this.project.length < 1){
           return this.$message.warning('请选择项目名称')
         }else {
-          data['project'] = this.project
+          this.project.forEach(item =>{
+            if(item === '全部渠道'){
+              data['project'] = this.project
+            }else {
+              data['project'] = this.project
+            }
+          })
+
         }
         /**
         if(this.project.indexOf('全部渠道') > -1){
@@ -380,12 +387,13 @@
             }
           },
           xAxis: {
+            type: 'value'
+
+          },
+          yAxis: {
             type: 'category',
             // boundaryGap: false,
             data: seriesName
-          },
-          yAxis: {
-            type: 'value'
           },
           series: series,
         });
