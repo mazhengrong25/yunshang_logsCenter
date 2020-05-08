@@ -18,7 +18,13 @@
         </el-select>
       </div>
       <div class="search_list" style="width: 150px">
-        <el-select v-model="searchForm.module" size="small" placeholder="请选择模块" clearable @change="getFieldList(searchForm.module)">
+        <el-select
+          v-model="searchForm.module"
+          size="small"
+          placeholder="请选择模块"
+          :popper-append-to-body="false"
+          clearable
+          @change="getFieldList(searchForm.module)">
           <el-option
             v-for="(item,index) in modalList"
             :key="index"
