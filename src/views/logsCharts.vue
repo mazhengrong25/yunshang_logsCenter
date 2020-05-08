@@ -3,8 +3,7 @@
     <div class="search_header" ref="searchHeader">
       <div class="search_box search_project">
         <el-select
-          style="min-width: 300px"
-          @change="getModalList(project)"
+          style="min-width: 700px"
           v-model="project"
           multiple
           clearable
@@ -23,30 +22,9 @@
           </el-option-group>
         </el-select>
       </div>
-<!--      <div class="search_box search_project">-->
-<!--        <el-select-->
-<!--          style="min-width: 300px"-->
-<!--          v-model="module"-->
-<!--          :disabled="project.length > 1 || project.indexOf('全部渠道') !== -1 || modalList.length < 1"-->
-<!--          multiple-->
-<!--          clearable-->
-<!--          :popper-append-to-body="false"-->
-<!--          placeholder="请选择模块">-->
-<!--          <el-option-group label="勾选全部">-->
-<!--            <el-option label="全部模块" value="全部模块"></el-option>-->
-<!--          </el-option-group>-->
-<!--          <el-option-group label="模块列表">-->
-<!--            <el-option-->
-<!--              v-for="(item ,index) in modalList"-->
-<!--              :key="index"-->
-<!--              :label="item.text"-->
-<!--              :value="item.id"-->
-<!--            ></el-option>-->
-<!--          </el-option-group>-->
-<!--        </el-select>-->
-<!--      </div>-->
       <div class="search_box">
         <el-date-picker
+          style="width: 320px"
           v-model="searchTime"
           type="daterange"
           format="yyyy 年 MM 月 dd 日"
@@ -64,7 +42,7 @@
              v-if="chartsData.length > 0"
              shadow="hover"
              :style="'height: calc(100vh - '+searchHeaderHeight+'px - 125px)'">
-      <div id="myChart" :style="'height: calc(100vh - '+searchHeaderHeight+'px - 165px)'"></div>
+      <div id="myChart" style="height: 100%;width: 100%"></div>
     </el-card>
     <div class="prompt" v-else>暂无图表数据</div>
 
@@ -99,6 +77,8 @@
 
         chartsData: [], // 图表数据
         chartsType: 'bar', // 图表类型 line折线图 bar柱状图
+
+        barSliderType: 100,  // 柱状图初始数量
       }
     },
     methods: {
@@ -113,31 +93,13 @@
         if(this.project.length < 1){
           return this.$message.warning('请选择项目名称')
         }else {
-          this.project.forEach(item =>{
-            if(item === '全部渠道'){
-              data['project'] = this.project
-            }else {
-              data['project'] = this.project
-            }
-          })
-
+          if(this.project.indexOf('全部渠道') > -1){
+            data['project'] = this.projectData
+            this.project = this.projectData
+          }else{
+            data['project'] = this.project
+          }
         }
-        /**
-        if(this.project.indexOf('全部渠道') > -1){
-          this.project = this.projectData
-        }
-        if(this.module.length > 0 && this.module.indexOf('全部模块') === -1){
-          data['module'] = this.module
-        }
-        if(this.module.length < 1 || this.module.indexOf('全部模块') > -1){
-          this.module = []
-          this.modalList.map(item =>{
-            this.module.push(item.text)
-          })
-          data['module'] = this.module
-        }
-         */
-
         if(!this.searchTime || this.searchTime.length < 1){
           return this.$message.warning('请选择时间区间')
         }else {
@@ -147,13 +109,19 @@
         this.loading = true
         // echarts.init(document.getElementById('myChart')).dispose();
         // console.log(data);
-        this.$axios.post('/statistics/successRate',data)
+        this.$axios.post('http://192.168.0.176:8081/statistics/successRate',data)
           .then(res =>{
             if(res.data.code === 0){
-              this.chartsData = res.data.data
-              setTimeout(() =>{
-                this.echartsOption()
-              },1000)
+              if(typeof(res.data.data) === 'string'){
+                this.$message.warning(res.data.data)
+                this.loading = false
+              }else {
+                this.chartsData = res.data.data
+                setTimeout(() =>{
+                  this.echartsOption()
+                },1000)
+              }
+
             }else {
               this.loading = false
             }
@@ -164,50 +132,13 @@
       },
 
       /**
-       * @Description: 获取模块列表
-       * @author Wish
-       * @date 2020/3/20
-       */
-      getModalList(val) {
-        /***
-        if(val.length === 1){
-          this.modalList = [];
-          this.module = [];
-          this.$axios.get('/log/queryList/' + String(val))
-            .then(res => {
-              if (res.data.code === 0) {
-                let modalList = res.data.message;
-                for (let i = 0; i < modalList.length; i++) {
-                  let option = {
-                    "id": modalList[i].split('_')[0] + '_' + modalList[i].split('_')[1],
-                    "text": modalList[i].split('_')[1],
-                  };
-                  this.modalList.push(option)
-                }
-                console.log(this.modalList);
-                const obj = {};
-                this.modalList = this.modalList.reduce(function (item, next) {
-                  obj[next.text] ? '' : obj[next.text] = true && item.push(next);
-                  return item;
-                }, []);
-                console.log(this.modalList);
-              } else {
-                this.$message.warning(res.data.message)
-              }
-            })
-        }else {
-          this.module = []
-          this.modalList = []
-        }
-         */
-      },
-
-      /**
        * @Description: Echarts配置
        * @author Wish
        * @date 2020/4/26
       */
       echartsOption() {
+        let myChart = echarts.init(document.getElementById('myChart'))
+        window.addEventListener("resize", myChart.resize);
 
         let xAxisData = this.$timeSupplement(this.searchTime[0],this.searchTime[1]); // X轴数据列表
 
@@ -229,7 +160,7 @@
         }else {
           this.chartsType = 'bar'
         }
-
+        console.log('图表状态',this.chartsType);
         this.chartsData.forEach((item ,index) =>{
 
           console.log('根数据',item);
@@ -245,15 +176,39 @@
            * @author Wish
            * @date 2020/4/28
           */
-          item.Modules.forEach((aItem, aIndex) =>{
-            console.log('模块名称',aItem.ModuleName);
-            seriesName.push(aItem.ModuleName)
-            console.log('选中日数据列表',aItem);
-            error.push(aItem.TotalError || 0)
-            fatal.push(aItem.TotalFatal || 0)
-            info.push(aItem.TotalInfo || 0)
-            warn.push(aItem.TotalWarn || 0)
-          })
+          if(this.chartsType === 'bar'){
+            item.Modules.forEach((aItem, aIndex) =>{
+              console.log('模块名称',aItem.ModuleName);
+              seriesName.push(item.Project+'_'+aItem.ModuleName)
+              console.log('选中日数据列表',aItem);
+              error.push(aItem.TotalError || 0)
+              fatal.push(aItem.TotalFatal || 0)
+              info.push(aItem.TotalInfo || 0)
+              warn.push(aItem.TotalWarn || 0)
+            })
+          }else {
+            item.Modules.forEach((aItem, aIndex) =>{
+              console.log(aItem);
+              if(aItem.Data){
+                aItem.Data.forEach(ditem =>{
+                  console.log('模块名称',ditem.Date);
+                  seriesName.push(ditem.Date)
+                  console.log('选中日数据列表',ditem.Nums);
+                  error.push(ditem.Nums.error || 0)
+                  fatal.push(ditem.Nums.fatal || 0)
+                  info.push(ditem.Nums.info || 0)
+                  warn.push(ditem.Nums.warn || 0)
+                })
+              }else {
+                this.$message.warning('暂无数据')
+              }
+            })
+          }
+
+
+          this.barSliderType = seriesName.length > 10? 20: 50
+
+          console.log('数据名称列表',seriesName);
 
           seriesName.forEach((item, index) =>{
             series = [{
@@ -261,68 +216,27 @@
               type: 'bar',
               stack: item,
               data: error,
-              title: item.Project
+              title: this.chartsType === 'bar'?item: 'error'
             },{
               name: 'fatal',
               type: 'bar',
               stack: item,
               data: fatal,
-              title: item.Project
+              title: this.chartsType === 'bar'?item: 'fatal'
             },{
               name: 'info',
               type: 'bar',
               stack: item,
               data: info,
-              title: item.Project
+              title: this.chartsType === 'bar'?item: 'info'
             },{
               name: 'warn',
               type: 'bar',
               stack: item,
               data: warn,
-              title: item.Project
+              title: this.chartsType === 'bar'?item: 'warn'
             }]
           })
-
-          /**
-          this.chartsType = item.Modules.length === 1? 'line': 'bar'
-          item.Modules.forEach((oItem, oIndex) =>{
-            chartLegendData.push(oItem.ModuleName)
-
-            xAxisData.forEach((lItem,lIndex) =>{
-              oItem.Data.forEach((pItem, pIndex) =>{
-                seriesData[lIndex] = []
-                for (let key in pItem.Nums){
-                  seriesName.push(key)
-                  if(String(pItem.Date.split('T',1)) === lItem){
-                    seriesData[lIndex].push(pItem.Nums[key])
-                  }else {
-                    seriesData[lIndex].push(0)
-                  }
-                }
-              })
-              series.push({
-                smooth: true,
-                type: this.chartsType,
-                name: seriesName[lIndex],
-                stack: oItem.ModuleName,
-                data: seriesData[lIndex],
-                label: {
-                  show: true,
-                  position: 'inside',
-                  formatter: function (params) {
-                    if (params.value > 0) {
-                      return params.value;
-                    } else {
-                      return '';
-                    }
-                  },
-                },
-              })
-
-            })
-
-          })
-          */
         })
 
 
@@ -332,14 +246,14 @@
         // console.log(seriesName);
         // console.log(chartLegendData);
         // console.log(series);
+
         console.log('chartData数据',series);
         // 基于准备好的dom，初始化echarts实例
         // 绘制图表
         this.loading = false
-        let myChart = echarts.init(document.getElementById('myChart'))
 
         myChart.setOption({
-          color: ['#F56C6C','#67C23A','#909399','#E6A23C'],
+          color: ['#FFA964','#FE8081','#3193FE','#F092D0'],
           tooltip: {
             trigger: 'axis',
             axisPointer: {            // 坐标轴指示器，坐标轴触发有效
@@ -374,12 +288,18 @@
             bottom: '3%',
             containLabel: true
           },
-          // dataZoom: [{  // 缩放
-          //   id: 'dataZoomX',
-          //   xAxisIndex: [0],
-          //   type: 'slider',
-          //   filterMode: 'filter',
-          // }],
+          dataZoom : [{
+            type: 'slider',
+            filterMode: 'filter',
+            show: this.barSliderType !== 50 && this.chartsType === 'bar',
+            yAxisIndex: [0],
+            right: '2%',
+            top: 0,
+            start: 0,
+            end: 20,  //初始化滚动条
+            startValue:10,  //数据窗口范围的起始数值
+            endValue:100,
+          }],
           toolbox: {  // 控制条
             show: true,
             feature: {
@@ -387,8 +307,8 @@
             }
           },
           xAxis: {
-            type: 'value'
-
+            type: 'value',
+            // data: this.chartsType === 'bar'? false: seriesName
           },
           yAxis: {
             type: 'category',
@@ -406,7 +326,7 @@
        * @date 2020/4/26
       */
       getProjectData(){
-        this.$axios.get('/log/queryList')
+        this.$axios.get('http://192.168.0.176:8081/log/queryList')
           .then(res =>{
             if(res.data.code === 0){
               this.projectData = res.data.message
@@ -427,6 +347,8 @@
   .logs_charts{
     height: 100%;
     position: relative;
+    padding-bottom: 20px;
+
     .prompt{
       position: absolute;
       width: 100%;

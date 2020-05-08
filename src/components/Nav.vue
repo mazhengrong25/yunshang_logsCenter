@@ -56,6 +56,7 @@
     height: 60px;
     background: rgba(0,123,255,.8);
     padding: 0 20px;
+    min-width: 800px;
     .logo{
       width: 120px;
       object-fit: contain;

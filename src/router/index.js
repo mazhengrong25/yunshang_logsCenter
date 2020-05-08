@@ -28,7 +28,7 @@ const routes = [
 ]
 
 const router = new VueRouter({
-  mode: 'history',
+  // mode: 'history',
   base: process.env.BASE_URL,
   routes
 })
@@ -45,7 +45,7 @@ router.beforeEach((to, from, next) => {
     if(localStorage.login){
       next()
     }else{
-      next({path:"/login"})
+      next({name:"Login"})
     }
   }
 

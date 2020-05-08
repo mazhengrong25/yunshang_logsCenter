@@ -344,7 +344,7 @@
           this.searchForm['pageNums'] = this.dataNum
           // this.$message.success('拉取第'+this.dataPage+'页的数据');
 
-          this.$axios.get('/log/query', {params: this.searchForm})
+          this.$axios.get('http://192.168.0.176:8081/log/query', {params: this.searchForm})
             .then(res => {
               if (res.data.code === 0) {
                 let dataList = res.data.message
@@ -429,7 +429,7 @@
        * @date 2020/3/23
        */
       getFieldList(val) {
-        this.$axios.get('/log/queryList/' + this.searchForm.module + '/' + val)
+        this.$axios.get('http://192.168.0.176:8081/log/queryList/' + this.searchForm.module + '/' + val)
           .then(res => {
             if (res.data.code === 0) {
               this.fieldListPlace = res.data.fieldName
@@ -500,7 +500,7 @@
         this.searchForm['endTime'] = this.endTime?this.$getTime(new Date(this.endTime).getTime()).replace(/\s+/g, "T"):''
         this.searchForm['whichPage'] = this.dataPage
         this.searchForm['pageNums'] = this.dataNum
-        this.$axios.get('/log/query', {params: this.searchForm})
+        this.$axios.get('http://192.168.0.176:8081/log/query', {params: this.searchForm})
           .then(res => {
             if (res.data.code === 0) {
               let dataList = res.data.message
@@ -561,7 +561,7 @@
         let data = {
           username: this.username
         }
-        this.$axios.post('/user/getProjects',data)
+        this.$axios.post('http://192.168.0.176:8081/user/getProjects',data)
           .then(res =>{
             if(res.data.code === 0){
               this.userProjects = res.data.message
