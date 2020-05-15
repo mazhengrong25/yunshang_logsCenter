@@ -166,7 +166,7 @@
         }
         this.loading = true
 
-        this.$axios.post('http://192.168.0.176:8081/statistics/successRate',data)
+        this.$axios.post('/statistics/successRate',data)
           .then(res =>{
             if(res.data.code === 0){
               if(typeof(res.data.data) === 'string'){
@@ -198,7 +198,7 @@
         if(val.length === 1 && String(val) !== '全部渠道'){
           this.modalList = [];
           this.module = [];
-          this.$axios.get('http://192.168.0.176:8081/log/queryList/' + String(val))
+          this.$axios.get('/log/queryList/' + String(val))
             .then(res => {
               if (res.data.code === 0) {
                 let modalList = res.data.message;
@@ -483,7 +483,7 @@
        * @date 2020/4/26
       */
       getProjectData(){
-        this.$axios.get('http://192.168.0.176:8081/log/queryList')
+        this.$axios.get('/log/queryList')
           .then(res =>{
             if(res.data.code === 0){
               this.projectData = res.data.message

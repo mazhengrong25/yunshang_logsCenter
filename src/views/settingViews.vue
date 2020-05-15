@@ -213,7 +213,7 @@
        * @date 2020/3/24
       */
       getSettingData(){
-        this.$axios.get('http://192.168.0.176:8081/log/queryList/log/settings')
+        this.$axios.get('/log/queryList/log/settings')
           .then(res =>{
             if(res.data.code === 0){
               let settingData =  res.data.message
@@ -327,7 +327,7 @@
             max_alarm_num: Number(this.settingForm.max_alarm_num)
           }
         }
-        let url = this.settingType === 'add'? 'http://192.168.0.176:8081/settings/set': 'http://192.168.0.176:8081/settings/alarm'
+        let url = this.settingType === 'add'? '/settings/set': '/settings/alarm'
         this.$axios.post(url,data)
           .then(res =>{
             if(res.data.code === 0){
@@ -368,7 +368,7 @@
             project_list: this.userProjects,
             username: this.username
           }
-          this.$axios.post('http://192.168.0.176:8081/user/addProjects',data)
+          this.$axios.post('/user/addProjects',data)
             .then(res =>{
               if(res.data.code === 0){
                 this.showEditBtn = true
@@ -487,7 +487,7 @@
         let data = {
           username: this.username
         }
-        this.$axios.post('http://192.168.0.176:8081/user/getProjects',data)
+        this.$axios.post('/user/getProjects',data)
           .then(res =>{
             if(res.data.code === 0){
               this.userProjects = res.data.message
@@ -500,7 +500,8 @@
     created() {
       this.username = JSON.parse(localStorage.getItem('login')).username
       this.getUserProjects()
-
+    },
+    mounted() {
       this.getSettingData()
     }
   }

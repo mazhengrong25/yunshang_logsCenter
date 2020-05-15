@@ -38,7 +38,7 @@ module.exports = {
   productionSourceMap: false,
   devServer: {
     // disableHostCheck:true,
-    proxy: 'http://192.168.0.176:8081',
+    proxy: 'http://192.168.0.212:8081',
     // changeOrigin: true,
   //   // overlay: {
   //   //   errors: true,

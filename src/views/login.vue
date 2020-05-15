@@ -132,7 +132,7 @@
         if(!pattern.test(this.register.username)){
           return this.$message.warning('用户名仅能为英文、数字与下划线组合，请输入正确的用户名')
         }
-        this.$axios.post('http://192.168.0.176:8081/user/register',this.register)
+        this.$axios.post('/user/register',this.register)
           .then(res =>{
             if(res.data.code === 0){
               this.$message.success(res.data.message)
@@ -166,7 +166,7 @@
         if(!this.findBack['job_num'] || !this.findBack['username']){
           return this.$message.warning('请填写' + (!this.findBack['job_num']?'工号':!this.findBack['username']?'用户名':''))
         }
-        this.$axios.post('http://192.168.0.176:8081/user/findBack',this.findBack)
+        this.$axios.post('/user/findBack',this.findBack)
           .then(res =>{
             let message = res.data.message
             if(res.data.code === 0){
@@ -201,7 +201,7 @@
             username: this.login['username'],
             password: this.login['password']
           }
-          this.$axios.post('http://192.168.0.176:8081/user/login',data)
+          this.$axios.post('/user/login',data)
             .then(res =>{
               if(res.data.code === 0){
                 if(res.data.message === '登录成功'){
