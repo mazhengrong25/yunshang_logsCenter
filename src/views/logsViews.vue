@@ -210,15 +210,18 @@
 
     <el-dialog
       title="日志详情"
+      custom-class="message_details"
       :visible.sync="showMessageDetails"
-      width="600px">
+      width="50%">
       <el-button type="text"
                  class="copyJson"
                  v-clipboard:error="onError"
                  v-clipboard:copy="messageType === 'json'?JSON.stringify(messageDetails): messageDetails"
                  v-clipboard:success="onCopy">复制</el-button>
-      <json-view v-if="messageType === 'json'" style="max-height: 500px;overflow-y: auto" :json="messageType === 'json'?messageDetails:'{}'"></json-view>
-      <p v-else style="max-height: 500px;overflow-y: auto">{{messageDetails}}</p>
+      <el-button class="closeJson" type="text" @click="closeJsonBtn()">{{closeJsonType? '展开全部':'折叠全部'}}</el-button>
+      <json-view v-if="messageType === 'json'" :data="messageType === 'json'?messageDetails:'{}'" :deep="showJsonDeep"/>
+<!--      <json-view v-if="messageType === 'json'" style="overflow-y: auto" :json="messageType === 'json'?messageDetails:'{}'"></json-view>-->
+      <p v-else style="overflow-y: auto">{{messageDetails}}</p>
     </el-dialog>
 
     <el-dialog
@@ -264,10 +267,12 @@
 
 <script>
   import elTableInfiniteScroll from 'el-table-infinite-scroll';
+  import jsonView from 'vue-json-views'
   export default {
     name: "logsViews",
     components: {
-      'JsonView': () => import('@/components/JsonView'),
+      // 'JsonView': () => import('@/components/JsonView'),
+      jsonView,
       elTableInfiniteScroll
     },
     directives: {
@@ -324,6 +329,10 @@
 
         fieldDetailsList: [],  // 选中关键字列表
         fieldDetailsData: [],  // 选中关键字列表处理
+
+
+        closeJsonType: false, // 折叠全部json
+        showJsonDeep: 3
       }
     },
     watch:{
@@ -337,6 +346,11 @@
       }
     },
     methods: {
+      // 折叠全部json
+      closeJsonBtn(){
+        this.closeJsonType = !this.closeJsonType
+        this.showJsonDeep = this.closeJsonType?1:3
+      },
       /**
        * @Description: 起始时间重置
        * @author Wish
@@ -738,9 +752,7 @@
   /deep/.el-dialog__body{
     padding-top: unset;
   }
-  /deep/.json-view{
-    white-space: pre-wrap !important;
-  }
+
   .field_box{
     padding-top: 25px;
     padding-left: 15px;
@@ -766,5 +778,22 @@
     position: absolute;
     top: 20px;
     left: 125px;
+  }
+  .closeJson{
+    position: absolute;
+    top: 20px;
+    left: 175px;
+  }
+  /deep/.message_details{
+    height: 98vh;
+    margin: 1vh auto !important;
+    .el-dialog__body{
+      padding-bottom: unset;
+      height: 91%;
+      .json-view-container{
+        height: calc(100% - 10px);
+        overflow-x: auto;
+      }
+    }
   }
 </style>

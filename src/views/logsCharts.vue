@@ -73,10 +73,10 @@
           <p>百分比</p>
         </div>
         <div class="line_table_data">
-          <p v-for="(value, key) in lineTableNumber" v-if="key !== 'lineTotal' && key !== 'null'">
+          <p v-for="(value, key) in lineTableNumber" v-if="key !== 'null'">
             <span>{{key}}</span>
             <span>{{value}}</span>
-            <span>{{(Math.round(value / lineTableNumber.lineTotal * 10000) / 100.00).toFixed(1)}}%</span>
+            <span>{{(Math.round(value / lineTableNumber.total * 10000) / 100.00).toFixed(1)}}%</span>
           </p>
         </div>
 
@@ -320,11 +320,11 @@
 
                 })
                 this.lineTableNumber = {
-                  lineTotal: aItem.Total,
                   error: aItem.TotalError,
                   fatal: aItem.TotalFatal,
                   info: aItem.TotalInfo,
                   warn: aItem.TotalWarn,
+                  total: aItem.Total,
                 }
 
               }
