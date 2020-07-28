@@ -218,10 +218,10 @@
                  v-clipboard:error="onError"
                  v-clipboard:copy="messageType === 'json'?JSON.stringify(messageDetails): messageDetails"
                  v-clipboard:success="onCopy">复制</el-button>
-      <el-button class="closeJson" type="text" @click="closeJsonBtn()">{{closeJsonType? '展开全部':'折叠全部'}}</el-button>
+      <el-button class="closeJson" v-if="messageType === 'json'" type="text" @click="closeJsonBtn()">{{closeJsonType? '展开全部':'折叠全部'}}</el-button>
       <json-view v-if="messageType === 'json'" :data="messageType === 'json'?messageDetails:'{}'" :deep="showJsonDeep"/>
 <!--      <json-view v-if="messageType === 'json'" style="overflow-y: auto" :json="messageType === 'json'?messageDetails:'{}'"></json-view>-->
-      <p v-else style="overflow-y: auto">{{messageDetails}}</p>
+      <p v-else style="overflow-y: auto;height: 95%">{{messageDetails}}</p>
     </el-dialog>
 
     <el-dialog
