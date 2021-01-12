@@ -1,3 +1,10 @@
+/*
+ * @Description: 
+ * @Author: wish.WuJunLong
+ * @Date: 2020-03-20 17:25:59
+ * @LastEditTime: 2020-08-13 11:27:35
+ * @LastEditors: wish.WuJunLong
+ */
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'

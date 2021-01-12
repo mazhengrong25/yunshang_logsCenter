@@ -247,7 +247,7 @@
                   // item.children.forEach()
                   item.project = item.project + ' ('+item.children.length + ')'
                 })
-                this.settingData = listArr
+                this.settingData = [...new Set(listArr)]
                 // console.log(this.settingData);
               }
             }else {
