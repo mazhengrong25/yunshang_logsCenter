@@ -367,7 +367,7 @@ export default {
 
       messageType: "", // 日志详情类型
 
-      dataPage: 1,
+      dataPage: 0,
       dataNum: 15,
       scrollStatus: false,
       messageList: {}, // 日志报告信息
@@ -411,7 +411,7 @@ export default {
      * @author Wish
      * @date 2020/4/14
      */
-    load() {
+    async load() {
       if (this.scrollStatus) {
         this.dataPage = this.dataPage + 1;
         this.searchForm["startTime"] = this.$getTime(
@@ -421,7 +421,7 @@ export default {
         this.searchForm["pageNums"] = this.dataNum;
         // this.$message.success('拉取第'+this.dataPage+'页的数据');
 
-        this.$axios
+        await this.$axios
           .get("/log/query", { params: this.searchForm })
           .then((res) => {
             if (res.data.code === 0) {
@@ -580,7 +580,7 @@ export default {
       }
 
 
-      this.dataPage = 1;
+      this.dataPage = 0;
       this.scrollStatus = true;
       this.messageList = {};
       this.logDataList = [];
