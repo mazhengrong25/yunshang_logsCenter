@@ -632,19 +632,24 @@ export default {
       this.messageDetails = "";
       this.showMessageDetails = true;
       try {
-        if (val.indexOf("xml") !== -1) {
+        if (val.indexOf("xml") !== -1 && typeof JSON.parse(val) !== "object") {
           this.messageDetails = val;
           this.messageType = "text";
+          console.log('text',typeof JSON.parse(val))
         } else {
-          if (typeof JSON.parse(val) == "object") {
+          if (typeof JSON.parse(val) === "object") {
             this.messageDetails = JSON.parse(val);
             this.messageType = "json";
+          }else{
+            this.messageDetails = val;
+            this.messageType = "text";
           }
         }
       } catch (e) {
         this.messageDetails = val;
         this.messageType = "text";
       }
+      console.log(this.messageType)
     },
 
     /**
