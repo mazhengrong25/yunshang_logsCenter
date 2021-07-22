@@ -1,3 +1,10 @@
+/*
+ * @Description: 
+ * @Author: wish.WuJunLong
+ * @Date: 2020-03-20 17:25:59
+ * @LastEditTime: 2021-07-22 11:23:44
+ * @LastEditors: wish.WuJunLong
+ */
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 
@@ -7,6 +14,11 @@ const routes = [
   {
     path: '/',
     name: 'Index',
+    component: () => import('../views/newLogsViews.vue')
+  },
+  {
+    path: '/logViews',
+    name: 'LogViews',
     component: () => import('../views/logsViews.vue')
   },{
     path: '/settingViews',

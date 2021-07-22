@@ -2,7 +2,7 @@
  * @Description: 
  * @Author: wish.WuJunLong
  * @Date: 2020-03-20 17:25:59
- * @LastEditTime: 2020-08-13 11:27:35
+ * @LastEditTime: 2021-07-22 13:39:18
  * @LastEditors: wish.WuJunLong
  */
 import Vue from 'vue'
@@ -82,6 +82,9 @@ Vue.prototype.$alert = MessageBox.alert;
 
 import axios from "axios";
 Vue.prototype.$axios = axios;
+
+import moment from 'moment'
+Vue.prototype.$moment = moment
 
 import VueClipboard  from 'vue-clipboard2'
 

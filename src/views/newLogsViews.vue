@@ -406,6 +406,16 @@ export default {
       this.closeJsonType = !this.closeJsonType;
       this.showJsonDeep = this.closeJsonType ? 1 : 3;
     },
+
+    // 关键字字段拆分
+    getFieldsArray(val) {
+      if (val) {
+        return val.split("^");
+      } else {
+        return [];
+      }
+    },
+
     /**
      * @Description: 起始时间重置
      * @author Wish
@@ -413,39 +423,68 @@ export default {
      */
     async load() {
       if (this.scrollStatus) {
-        this.dataPage = this.dataPage + 1;
+        // this.dataPage = this.dataPage + 1;
         this.searchForm["startTime"] = this.startTime
           ? this.$moment(this.startTime).format("YYYY-MM-DDTHH:mm:ss")
           : "";
-        this.searchForm["whichPage"] = this.dataPage;
-        this.searchForm["pageNums"] = this.dataNum;
+
+        // this.searchForm["whichPage"] = this.dataPage;
+        // this.searchForm["pageNums"] = this.dataNum;
         // this.$message.success('拉取第'+this.dataPage+'页的数据');
 
+        this.scrollStatus = false;
+
+        let data = {
+          project: this.searchForm.project,
+          module: this.searchForm.module,
+          level: this.searchForm.level,
+          user: this.searchForm.user,
+          startTime: this.searchForm.startTime,
+          endTime: this.searchForm.endTime,
+          message: this.searchForm.msg,
+          fields: this.getFieldsArray(this.searchForm.field1),
+          startId: this.searchForm.lastId || "",
+          limit: 15,
+        };
+
+        // return false;
+
         await this.$axios
-          .get("/log/query", { params: this.searchForm })
+          .post("/log/queryLog", data)
           .then((res) => {
             if (res.data.code === 0) {
-              let dataList = res.data.message;
+              this.scrollStatus = res.data.data.length > 0;
+              if (res.data.data.length < 1) {
+                this.$message.warning("到达底部");
+              }
+              let dataList = res.data.data;
               if (dataList instanceof Array) {
                 dataList.map((item) => {
                   item.project = item.project || this.searchForm.project;
                   item.module = item.module || this.searchForm.module.split("_")[1];
                 });
-                this.messageNum += res.data.recordNums;
+                // this.messageNum += res.data.recordNums;
                 this.messageList = res.data;
                 this.logDataList = this.logDataList.concat(dataList);
+                this.searchForm["lastId"] =
+                  dataList.length > 0 ? dataList[dataList.length - 1].id : "";
+                console.log(this.searchForm["lastId"]);
               }
-              setTimeout(() => {
-                if (this.logDataList.length < 50) {
-                  this.load();
-                }
-              }, 200);
+
+              if (dataList.length > 0) {
+                setTimeout(() => {
+                  if (this.logDataList.length < 50) {
+                    this.load();
+                  }
+                }, 200);
+              }
             } else {
               this.scrollStatus = false;
               this.$message.warning(res.data.message);
             }
           })
           .catch((e) => {
+            console.log(e);
             this.logDataList = [];
             this.$message.error("请求错误");
           });
@@ -579,45 +618,18 @@ export default {
         return this.$message.warning("请选择项目及模块");
       }
 
-      this.dataPage = 0;
+      // this.dataPage = 0;
       this.scrollStatus = true;
       this.messageList = {};
       this.logDataList = [];
+
       this.searchForm["startTime"] = this.startTime
         ? this.$moment(this.startTime).format("YYYY-MM-DDTHH:mm:ss")
         : "";
       this.searchForm["endTime"] = this.endTime
         ? this.$moment(this.endTime).format("YYYY-MM-DDTHH:mm:ss")
         : "";
-      this.searchForm["whichPage"] = this.dataPage;
-      this.searchForm["pageNums"] = this.dataNum;
-      // this.$axios
-      //   .get("/log/query", { params: this.searchForm })
-      //   .then((res) => {
-      //     if (res.data.code === 0) {
-      //       let dataList = res.data.message;
-      //       this.messageNum = res.data.recordNums;
-      //       this.messageList = res.data;
-      //       console.log(dataList instanceof Array);
-      //       if (dataList instanceof Array) {
-      //         dataList.map((item) => {
-      //           item.project = item.project || this.searchForm.project;
-      //           item.module = item.module || this.searchForm.module.split("_")[1];
-      //         });
-      //         this.logDataList = dataList;
-      //       } else {
-      //         this.logDataList = [];
-      //         this.$message.warning("暂无数据");
-      //       }
-      //     } else {
-      //       this.logDataList = [];
-      //       this.$message.warning(res.data.message);
-      //     }
-      //   })
-      //   .catch((e) => {
-      //     this.logDataList = [];
-      //     this.$message.error("请求错误");
-      //   });
+
       this.load();
     },
 

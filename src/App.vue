@@ -2,7 +2,7 @@
  * @Description: 
  * @Author: wish.WuJunLong
  * @Date: 2020-03-20 17:25:59
- * @LastEditTime: 2021-01-12 16:21:32
+ * @LastEditTime: 2021-07-22 11:23:07
  * @LastEditors: wish.WuJunLong
 -->
 <template>
@@ -32,9 +32,14 @@ export default {
     return {
       navList: [
         {
-          name: "日志查询",
+          name: "(新)日志查询",
           path: "/",
         },
+        {
+          name: "日志查询",
+          path: "/logViews",
+        },
+        
         {
           name: "查询配置",
           path: "/settingViews",
