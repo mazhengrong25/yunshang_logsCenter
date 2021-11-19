@@ -630,6 +630,8 @@ export default {
         ? this.$moment(this.endTime).format("YYYY-MM-DDTHH:mm:ss")
         : "";
 
+      this.searchForm["lastId"] = "";
+
       this.load();
     },
 
